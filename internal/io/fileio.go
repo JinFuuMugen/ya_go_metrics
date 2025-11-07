@@ -1,21 +1,17 @@
-package fileio
+package io
 
 import (
 	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
-	"time"
 
-	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
-	"github.com/JinFuuMugen/ya_go_metrics/internal/logger"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/models"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 )
 
-func saveMetrics(filepath string, counters []storage.Counter, gauges []storage.Gauge) error {
+func saveMetricsFile(filepath string, counters []storage.Counter, gauges []storage.Gauge) error {
 	var metrics []models.Metrics
 
 	for _, c := range counters {
@@ -59,7 +55,7 @@ func saveMetrics(filepath string, counters []storage.Counter, gauges []storage.G
 	return nil
 }
 
-func loadMetrics(filepath string) error {
+func loadMetricsFile(filepath string) error {
 	var metrics []models.Metrics
 
 	file, err := os.OpenFile(filepath, os.O_RDONLY|os.O_CREATE, 0666)
@@ -89,47 +85,4 @@ func loadMetrics(filepath string) error {
 		}
 	}
 	return nil
-}
-
-func Run(cfg *config.ServerConfig) error {
-	if cfg.FileStoragePath != "" {
-
-		if cfg.Restore {
-			err := loadMetrics(cfg.FileStoragePath)
-			if err != nil {
-				return fmt.Errorf("cannot read metrics: %w", err)
-			}
-		}
-	}
-	if cfg.StoreInterval > 0 {
-		go runDumper(cfg)
-	}
-	return nil
-}
-
-func runDumper(cfg *config.ServerConfig) {
-	storeTicker := time.NewTicker(cfg.StoreInterval)
-
-	for range storeTicker.C {
-		err := saveMetrics(cfg.FileStoragePath, storage.GetCounters(), storage.GetGauges())
-		if err != nil {
-			logger.Fatalf("cannot save metrics: %s", err)
-		}
-	}
-}
-
-func GetDumperMiddleware(cfg *config.ServerConfig) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-			next.ServeHTTP(w, r)
-
-			if cfg.StoreInterval <= 0 {
-				err := saveMetrics(cfg.FileStoragePath, storage.GetCounters(), storage.GetGauges())
-				if err != nil {
-					logger.Fatalf("cannot write metrics: %w", err)
-				}
-			}
-		})
-	}
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/JinFuuMugen/ya_go_metrics/internal/compress"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
-	"github.com/JinFuuMugen/ya_go_metrics/internal/fileio"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/handlers"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/logger"
 	"github.com/go-chi/chi/v5"
@@ -22,17 +21,25 @@ func main() {
 		log.Fatalf("cannot create logger: %s", err)
 	}
 
-	if err := fileio.Run(cfg); err != nil {
+	if cfg.DatabaseDSN != "" {
+		err := database.InitDatabase(cfg.DatabaseDSN)
+		if err != nil {
+			log.Fatalf("cannot create database connection: %s", err)
+		}
+	}
+
+	if err := io.Run(cfg); err != nil {
 		logger.Fatalf("cannot load preload metrics: %s", err)
 	}
 
 	rout := chi.NewRouter()
 
 	rout.Get("/", handlers.MainHandler)
-	rout.Get("/ping", handlers.PingDBHandler(cfg))
+
+	rout.Get("/ping", handlers.PingDBHandler())
 
 	rout.Route("/update", func(r chi.Router) {
-		r.Use(fileio.GetDumperMiddleware(cfg))
+		r.Use(io.GetDumperMiddleware(cfg))
 		r.Post("/", handlers.UpdateMetricsHandler)
 		r.Post("/{metric_type}/{metric_name}/{metric_value}", handlers.UpdateMetricsPlainHandler)
 	})
