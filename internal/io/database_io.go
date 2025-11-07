@@ -13,31 +13,55 @@ import (
 )
 
 func saveMetricsDB(counters []storage.Counter, gauges []storage.Gauge) error {
+	counterStmt, err := database.DB.Prepare(`
+		INSERT INTO metrics (type, value, delta, name)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (type, name) DO UPDATE SET value = $2, delta = $3;
+	`)
+	if err != nil {
+		return fmt.Errorf("cannot prepare counter statement: %w", err)
+	}
+	defer counterStmt.Close()
+
+	gaugeStmt, err := database.DB.Prepare(`
+		INSERT INTO metrics (type, value, delta, name)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (type, name) DO UPDATE SET value = $2, delta = $3;
+	`)
+	if err != nil {
+		return fmt.Errorf("cannot prepare gauge statement: %w", err)
+	}
+	defer gaugeStmt.Close()
+
 	for _, c := range counters {
-		_, err := database.DB.Exec("INSERT INTO metrics (type, value, delta, id) VALUES ($1, $2, $3, $4) ON CONFLICT (type, id) DO UPDATE SET value = $2, delta = $3;", c.Type, sql.NullFloat64{Valid: false, Float64: 0}, c.Value, c.Name)
+		_, err := counterStmt.Exec(c.Type, sql.NullFloat64{Valid: false, Float64: 0}, c.Value, c.Name)
 		if err != nil {
 			return fmt.Errorf("cannot execute query to save counters: %w", err)
 		}
 	}
 
 	for _, g := range gauges {
-		_, err := database.DB.Exec("INSERT INTO metrics (type, value, delta, id) VALUES ($1, $2, $3, $4) ON CONFLICT (type, id) DO UPDATE SET value = $2, delta = $3;", g.Type, g.Value, sql.NullInt64{Valid: false, Int64: 0}, g.Name)
+		_, err := gaugeStmt.Exec(g.Type, g.Value, sql.NullInt64{Valid: false, Int64: 0}, g.Name)
 		if err != nil {
 			return fmt.Errorf("cannot execute query to save gauges: %w", err)
 		}
 	}
+
 	return nil
 }
 
 func loadMetricsDB() error {
 	var metrics []models.Metrics
 
-	rows, err := database.DB.Query("SELECT id, type, value, delta from metrics")
+	stmt, err := database.DB.Prepare("SELECT id, type, value, delta FROM metrics")
+	if err != nil {
+		return fmt.Errorf("cannot prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
 	if err != nil {
 		return fmt.Errorf("cannot read metrics from db: %w", err)
-	}
-	if rows.Err() != nil {
-		return fmt.Errorf("cannot read metrics from db: %w", rows.Err())
 	}
 	defer rows.Close()
 
@@ -49,6 +73,10 @@ func loadMetricsDB() error {
 		}
 
 		metrics = append(metrics, m)
+	}
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("cannot read metrics from db: %w", err)
 	}
 
 	for _, m := range metrics {

@@ -56,17 +56,4 @@ func UpdateBatchMetricsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
-	//jsonBytes, err := json.Marshal(metrics)
-	//if err != nil {
-	//	logger.Errorf("cannot serialize metrics to json: %s", err)
-	//	http.Error(w, fmt.Sprintf("internal server error: %s", err), http.StatusInternalServerError)
-	//	return
-	//}
-	//
-	//w.Header().Set("Content-Type", "application/json")
-	//_, err = w.Write(jsonBytes)
-	//if err != nil {
-	//	logger.Fatalf("cannot write response: %s", err)
-	//}
 }
