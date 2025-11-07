@@ -8,7 +8,7 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/database"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/handlers"
-	"github.com/JinFuuMugen/ya_go_metrics/internal/io"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/loadsavemanager"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/logger"
 	"github.com/go-chi/chi/v5"
 )
@@ -30,7 +30,7 @@ func main() {
 		}
 	}
 
-	if err := io.Run(cfg); err != nil {
+	if err := loadsavemanager.Run(cfg); err != nil {
 		logger.Fatalf("cannot load preload metrics: %s", err)
 	}
 
@@ -40,8 +40,13 @@ func main() {
 
 	rout.Get("/ping", handlers.PingDBHandler())
 
+	rout.Route("/updates", func(r chi.Router) {
+		r.Use(loadsavemanager.GetDumperMiddleware(cfg))
+		r.Post("/", handlers.UpdateBatchMetricsHandler)
+	})
+
 	rout.Route("/update", func(r chi.Router) {
-		r.Use(io.GetDumperMiddleware(cfg))
+		r.Use(loadsavemanager.GetDumperMiddleware(cfg))
 		r.Post("/", handlers.UpdateMetricsHandler)
 		r.Post("/{metric_type}/{metric_name}/{metric_value}", handlers.UpdateMetricsPlainHandler)
 	})
