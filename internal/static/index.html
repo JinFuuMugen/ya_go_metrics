@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Metrics Values</title>
+</head>
+<body>
+
+<table width="100%" cellspacing="0" cellpadding="5">
+    <tr>
+        <td width="400" valign="top">
+            <h1>Gauges:</h1>
+            {{range .Gauges}}
+            <p>{{.Name}} {{.Value}}</p>
+            {{ end }}
+        </td>
+        <td valign="top">
+            <h1>Counters:</h1>
+            {{range .Counters}}
+            <p>{{.Name}}: {{.Value}}</p>
+            {{ end }}
+        </td>
+    </tr>
+</table>
+</body>
+</html>
