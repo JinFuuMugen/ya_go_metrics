@@ -29,6 +29,7 @@ func main() {
 	rout := chi.NewRouter()
 
 	rout.Get("/", handlers.MainHandler)
+	rout.Get("/ping", handlers.PingDBHandler(cfg))
 
 	rout.Route("/update", func(r chi.Router) {
 		r.Use(fileio.GetDumperMiddleware(cfg))

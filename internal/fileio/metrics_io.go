@@ -108,7 +108,8 @@ func Run(cfg *config.ServerConfig) error {
 }
 
 func runDumper(cfg *config.ServerConfig) {
-	storeTicker := time.NewTicker(time.Duration(cfg.StoreInterval) * time.Second)
+	storeTicker := time.NewTicker(cfg.StoreInterval)
+
 	for range storeTicker.C {
 		err := saveMetrics(cfg.FileStoragePath, storage.GetCounters(), storage.GetGauges())
 		if err != nil {
