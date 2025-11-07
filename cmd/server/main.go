@@ -6,7 +6,9 @@ import (
 
 	"github.com/JinFuuMugen/ya_go_metrics/internal/compress"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/database"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/handlers"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/io"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/logger"
 	"github.com/go-chi/chi/v5"
 )
