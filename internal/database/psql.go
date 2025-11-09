@@ -54,12 +54,7 @@ func (d *Database) Ping(ctx context.Context) error {
 	if d.db == nil {
 		return fmt.Errorf("database is not connected")
 	}
-
-	if err := d.Ping(ctx); err != nil {
-		return fmt.Errorf("cannot ping db: %w", err)
-	}
-
-	return nil
+	return d.db.PingContext(ctx)
 }
 
 func (d *Database) Query(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
