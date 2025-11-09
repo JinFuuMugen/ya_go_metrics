@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -23,14 +24,19 @@ func main() {
 		log.Fatalf("cannot create logger: %s", err)
 	}
 
+	var db *database.Database
 	if cfg.DatabaseDSN != "" {
-		err := database.InitDatabase(cfg.DatabaseDSN)
-		if err != nil {
+		db = database.New(cfg.DatabaseDSN)
+		if err := db.Connect(); err != nil {
 			log.Fatalf("cannot create database connection: %s", err)
+		}
+
+		if err := db.Migrate(context.Background()); err != nil {
+			log.Fatalf("cannot migrate database: %s", err)
 		}
 	}
 
-	if err := io.Run(cfg); err != nil {
+	if err := io.Run(cfg, db); err != nil {
 		logger.Fatalf("cannot load preload metrics: %s", err)
 	}
 
@@ -38,15 +44,15 @@ func main() {
 
 	rout.Get("/", handlers.MainHandler)
 
-	rout.Get("/ping", handlers.PingDBHandler())
+	rout.Get("/ping", handlers.PingDBHandler(db))
 
 	rout.Route("/updates", func(r chi.Router) {
-		r.Use(io.GetDumperMiddleware(cfg))
+		r.Use(io.GetDumperMiddleware(cfg, db))
 		r.Post("/", handlers.UpdateBatchMetricsHandler)
 	})
 
 	rout.Route("/update", func(r chi.Router) {
-		r.Use(io.GetDumperMiddleware(cfg))
+		r.Use(io.GetDumperMiddleware(cfg, db))
 		r.Post("/", handlers.UpdateMetricsHandler)
 		r.Post("/{metric_type}/{metric_name}/{metric_value}", handlers.UpdateMetricsPlainHandler)
 	})

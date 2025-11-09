@@ -11,18 +11,19 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-func PingDBHandler() http.HandlerFunc {
+func PingDBHandler(db *database.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if db == nil {
+			http.Error(w, "database is not configured", http.StatusServiceUnavailable)
+			return
+		}
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-
-		if err := database.DB.PingContext(ctx); err != nil {
+		if err := db.Ping(ctx); err != nil {
 			logger.Errorf("error pinging database: %s", err)
 			http.Error(w, "error pinging database", http.StatusInternalServerError)
 			return
-		} else {
-			w.WriteHeader(http.StatusOK)
-			return
 		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
