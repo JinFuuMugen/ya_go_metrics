@@ -1,4 +1,4 @@
-package fileio
+package io
 
 import (
 	"encoding/json"
@@ -22,12 +22,11 @@ func TestSaveMetrics(t *testing.T) {
 
 	filepath := `test_metrics.json`
 
-	err := saveMetrics(filepath, counters, gauges)
+	err := saveMetricsFile(filepath, counters, gauges)
 	if err != nil {
 		t.Fatalf("SaveMetrics failed with error: %v", err)
 	}
 
-	// read file content and deserialize json
 	file, err := os.Open(filepath)
 	if err != nil {
 		t.Fatalf("Failed to open test metrics file: %v", err)

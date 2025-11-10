@@ -32,7 +32,7 @@ func main() {
 		case <-reportTicker.C:
 			err := m.Dump()
 			if err != nil {
-				logger.Warnf("error dumping metrics: %w", err)
+				logger.Warnf("error dumping metrics: %s", err)
 			}
 		}
 	}

@@ -10,6 +10,7 @@ import (
 )
 
 func MainHandler(w http.ResponseWriter, _ *http.Request) {
+
 	tmpl, err := template.ParseFiles("internal/static/index.html")
 	if err != nil {
 		logger.Errorf("cannot parse template: %s", err)
