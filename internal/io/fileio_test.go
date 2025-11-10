@@ -27,7 +27,6 @@ func TestSaveMetrics(t *testing.T) {
 		t.Fatalf("SaveMetrics failed with error: %v", err)
 	}
 
-	// read file content and deserialize json
 	file, err := os.Open(filepath)
 	if err != nil {
 		t.Fatalf("Failed to open test metrics file: %v", err)
