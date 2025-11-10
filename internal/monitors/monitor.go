@@ -62,17 +62,11 @@ func (m *monitor) CollectMetrics() {
 }
 
 func (m *monitor) Dump() error {
-	for _, c := range m.Storage.GetCounters() {
-		err := m.Processor.Process(c)
-		if err != nil {
-			return fmt.Errorf("error dumping metric: %w", err)
-		}
-	}
-	for _, g := range m.Storage.GetGauges() {
-		err := m.Processor.Process(g)
-		if err != nil {
-			return fmt.Errorf("error dumping metric: %w", err)
-		}
+	c := m.Storage.GetCounters()
+	g := m.Storage.GetGauges()
+	err := m.Processor.Process(c, g)
+	if err != nil {
+		return fmt.Errorf("error dumping metric: %w", err)
 	}
 	return nil
 }

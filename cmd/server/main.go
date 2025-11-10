@@ -7,6 +7,7 @@ import (
 
 	"github.com/JinFuuMugen/ya_go_metrics/internal/compress"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/database"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/handlers"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/io"
@@ -48,11 +49,13 @@ func main() {
 
 	rout.Route("/updates", func(r chi.Router) {
 		r.Use(io.GetDumperMiddleware(cfg, db))
+		r.Use(cryptography.ValidateHashMiddleware(cfg))
 		r.Post("/", handlers.UpdateBatchMetricsHandler)
 	})
 
 	rout.Route("/update", func(r chi.Router) {
 		r.Use(io.GetDumperMiddleware(cfg, db))
+		r.Use(cryptography.ValidateHashMiddleware(cfg))
 		r.Post("/", handlers.UpdateMetricsHandler)
 		r.Post("/{metric_type}/{metric_name}/{metric_value}", handlers.UpdateMetricsPlainHandler)
 	})
