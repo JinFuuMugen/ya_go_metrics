@@ -16,9 +16,15 @@ func loadMetricsFile(path string) error {
 }
 
 func saveMetricsDB(db *database.Database, counters []storage.Counter, gauges []storage.Gauge) error {
+	if db == nil {
+		return nil
+	}
 	return dbio.SaveMetricsDB(db, counters, gauges)
 }
 
 func loadMetricsDB(db *database.Database) error {
+	if db == nil {
+		return nil
+	}
 	return dbio.LoadMetricsDB(db)
 }
