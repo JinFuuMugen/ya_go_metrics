@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/JinFuuMugen/ya_go_metrics/internal/logger"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/models"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 )
@@ -49,6 +50,10 @@ func SaveMetricsFile(filepath string, counters []storage.Counter, gauges []stora
 func LoadMetricsFile(filepath string) error {
 	f, err := os.Open(filepath)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			logger.Warnf("file %s not found. cannot load metrics: %s", filepath, err)
+			return nil
+		}
 		return fmt.Errorf("open file: %w", err)
 	}
 	defer f.Close()

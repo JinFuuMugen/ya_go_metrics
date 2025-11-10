@@ -1,1 +1,0 @@
-[{"id":"testCNT1","type":"counter","delta":10},{"id":"testCNT2","type":"counter","delta":2},{"id":"testGAU1","type":"gauge","value":123.123},{"id":"testGAU2","type":"gauge","value":999999.1313}]
