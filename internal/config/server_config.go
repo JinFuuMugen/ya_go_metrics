@@ -14,6 +14,7 @@ type ServerConfig struct {
 	FileStoragePath string        `env:"FILE_STORAGE_PATH"`
 	Restore         bool          `env:"RESTORE"`
 	DatabaseDSN     string        `env:"DATABASE_DSN"`
+	Key             string        `env:"KEY"`
 }
 
 func LoadServerConfig() (*ServerConfig, error) {
@@ -22,6 +23,7 @@ func LoadServerConfig() (*ServerConfig, error) {
 		StoreInterval:   300 * time.Second,
 		FileStoragePath: "tmp/metrics-db.json",
 		Restore:         true,
+		Key:             "",
 	}
 
 	flag.StringVar(&cfg.Addr, "a", cfg.Addr, "server address")
@@ -29,6 +31,7 @@ func LoadServerConfig() (*ServerConfig, error) {
 	flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "path of storage file")
 	flag.BoolVar(&cfg.Restore, "r", cfg.Restore, "boolean to load/not saved values")
 	flag.StringVar(&cfg.DatabaseDSN, "d", cfg.DatabaseDSN, "database DSN")
+	flag.StringVar(&cfg.Key, "k", cfg.Key, "SHA256 key")
 	flag.Parse()
 
 	if envAddr := os.Getenv("ADDRESS"); envAddr != "" {
@@ -62,5 +65,10 @@ func LoadServerConfig() (*ServerConfig, error) {
 	if envDatabaseDSN := os.Getenv("DATABASE_DSN"); envDatabaseDSN != "" {
 		cfg.DatabaseDSN = envDatabaseDSN
 	}
+
+	if envKey := os.Getenv("KEY"); envKey != "" {
+		cfg.Key = envKey
+	}
+
 	return cfg, nil
 }
