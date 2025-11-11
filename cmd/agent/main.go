@@ -32,7 +32,7 @@ func main() {
 	g := monitors.NewGopsutilMonitor(str, snd)
 
 	rateLimit := cfg.RateLimit
-	semaphore := make(chan bool, rateLimit)
+	semaphore := make(chan struct{}, rateLimit)
 
 	rateLimitTicker := time.NewTicker(time.Second / time.Duration(rateLimit))
 	defer rateLimitTicker.Stop()
@@ -41,11 +41,13 @@ func main() {
 		select {
 		case <-pollTicker.C:
 			m.CollectRuntimeMetrics()
-			g.CollectGopsutil()
+			if err := g.CollectGopsutil(); err != nil {
+				logger.Fatalf("error collecting gopsutil metrics: %v", err)
+			}
 
 		case <-reportTicker.C:
 			select {
-			case semaphore <- true:
+			case semaphore <- struct{}{}:
 				go func() {
 					err := m.Dump()
 					if err != nil {

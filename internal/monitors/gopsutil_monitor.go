@@ -2,7 +2,6 @@ package monitors
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/JinFuuMugen/ya_go_metrics/internal/sender"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
@@ -19,25 +18,27 @@ func NewGopsutilMonitor(s storage.Storage, p sender.Sender) GopsutilMonitor {
 	return &gopsutilMonitor{s, p}
 }
 
-func (m *gopsutilMonitor) Collect() {
-	m.CollectGopsutil()
+func (m *gopsutilMonitor) Collect() error {
+	return m.CollectGopsutil()
 }
 
-func (m *gopsutilMonitor) CollectGopsutil() {
+func (m *gopsutilMonitor) CollectGopsutil() error {
 
 	vm, err := mem.VirtualMemory()
 	if err != nil {
-		log.Fatalf("cannot get memory info: %s", err)
+		return fmt.Errorf("cannot get memory info: %w", err)
 	}
 
 	cpuPercent, err := cpu.Percent(0, false)
 	if err != nil {
-		log.Fatalf("cannot get CPU info: %s", err)
+		return fmt.Errorf("cannot get CPU info: %w", err)
 	}
 
 	m.Storage.SetGauge("TotalMemory", float64(vm.Total))
 	m.Storage.SetGauge("FreeMemory", float64(vm.Available))
 	m.Storage.SetGauge("CPUutilization1", cpuPercent[0])
+
+	return nil
 }
 
 func (m *gopsutilMonitor) Dump() error {

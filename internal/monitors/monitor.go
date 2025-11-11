@@ -3,7 +3,7 @@ package monitors
 import "github.com/JinFuuMugen/ya_go_metrics/internal/sender"
 
 type Monitor interface {
-	Collect()
+	Collect() error
 	Dump() error
 	SetProcessor(p sender.Sender)
 }
@@ -15,5 +15,5 @@ type RuntimeMonitor interface {
 
 type GopsutilMonitor interface {
 	Monitor
-	CollectGopsutil()
+	CollectGopsutil() error
 }

@@ -18,8 +18,9 @@ func NewRuntimeMonitor(s storage.Storage, p sender.Sender) RuntimeMonitor {
 	return &runtimeMonitor{Storage: s, Processor: p}
 }
 
-func (m *runtimeMonitor) Collect() {
+func (m *runtimeMonitor) Collect() error {
 	m.CollectRuntimeMetrics()
+	return nil
 }
 
 func (m *runtimeMonitor) CollectRuntimeMetrics() {
@@ -71,7 +72,7 @@ func (m *runtimeMonitor) collectRuntime() {
 	m.Storage.SetGauge("StackInuse", float64(rtm.StackInuse))     //uint64
 	m.Storage.SetGauge("StackSys", float64(rtm.StackSys))         //uint64
 	m.Storage.SetGauge("Sys", float64(rtm.Sys))                   //uint64
-	m.Storage.SetGauge("TotalAlloc", float64(rtm.TotalAlloc))     //uint64s
+	m.Storage.SetGauge("TotalAlloc", float64(rtm.TotalAlloc))     //uint64
 }
 
 func (m *runtimeMonitor) collectRuntimeSystem() {

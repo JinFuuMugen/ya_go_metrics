@@ -34,11 +34,11 @@ func LoadServerConfig() (*ServerConfig, error) {
 	flag.StringVar(&cfg.Key, "k", cfg.Key, "SHA256 key")
 	flag.Parse()
 
-	if envAddr := os.Getenv("ADDRESS"); envAddr != "" {
+	if envAddr, ok := os.LookupEnv("ADDRESS"); ok {
 		cfg.Addr = envAddr
 	}
 
-	if envStoreInterval := os.Getenv("STORE_INTERVAL"); envStoreInterval != "" {
+	if envStoreInterval, ok := os.LookupEnv("STORE_INTERVAL"); ok {
 		_, err := strconv.Atoi(envStoreInterval)
 		if err == nil {
 			envStoreInterval = envStoreInterval + "s"
@@ -50,11 +50,11 @@ func LoadServerConfig() (*ServerConfig, error) {
 		cfg.StoreInterval = storeInterval
 	}
 
-	if envFileStoragePath := os.Getenv("FILE_STORAGE_PATH"); envFileStoragePath != "" {
+	if envFileStoragePath, ok := os.LookupEnv("FILE_STORAGE_PATH"); ok {
 		cfg.FileStoragePath = envFileStoragePath
 	}
 
-	if envRestore := os.Getenv("RESTORE"); envRestore != "" {
+	if envRestore, ok := os.LookupEnv("RESTORE"); ok {
 		restore, err := strconv.ParseBool(envRestore)
 		if err != nil {
 			return nil, fmt.Errorf("cannot convert env RESTORE to boolean value: %w", err)
@@ -62,11 +62,11 @@ func LoadServerConfig() (*ServerConfig, error) {
 		cfg.Restore = restore
 	}
 
-	if envDatabaseDSN := os.Getenv("DATABASE_DSN"); envDatabaseDSN != "" {
+	if envDatabaseDSN, ok := os.LookupEnv("DATABASE_DSN"); ok {
 		cfg.DatabaseDSN = envDatabaseDSN
 	}
 
-	if envKey := os.Getenv("KEY"); envKey != "" {
+	if envKey, ok := os.LookupEnv("KEY"); ok {
 		cfg.Key = envKey
 	}
 
