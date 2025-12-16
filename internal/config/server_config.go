@@ -15,6 +15,8 @@ type ServerConfig struct {
 	Restore         bool          `env:"RESTORE"`
 	DatabaseDSN     string        `env:"DATABASE_DSN"`
 	Key             string        `env:"KEY"`
+	AuditFile       string        `env:"AUDIT_FILE"`
+	AuditURL        string        `env:"AUDIT_URL"`
 }
 
 func LoadServerConfig() (*ServerConfig, error) {
@@ -24,6 +26,8 @@ func LoadServerConfig() (*ServerConfig, error) {
 		FileStoragePath: "tmp/metrics-db.json",
 		Restore:         true,
 		Key:             "",
+		AuditFile:       "",
+		AuditURL:        "",
 	}
 
 	flag.StringVar(&cfg.Addr, "a", cfg.Addr, "server address")
@@ -32,6 +36,8 @@ func LoadServerConfig() (*ServerConfig, error) {
 	flag.BoolVar(&cfg.Restore, "r", cfg.Restore, "boolean to load/not saved values")
 	flag.StringVar(&cfg.DatabaseDSN, "d", cfg.DatabaseDSN, "database DSN")
 	flag.StringVar(&cfg.Key, "k", cfg.Key, "SHA256 key")
+	flag.StringVar(&cfg.AuditFile, "audit-file", cfg.AuditFile, "audit file path")
+	flag.StringVar(&cfg.AuditURL, "audit-url", cfg.AuditURL, "audit url")
 	flag.Parse()
 
 	if envAddr, ok := os.LookupEnv("ADDRESS"); ok {
@@ -68,6 +74,14 @@ func LoadServerConfig() (*ServerConfig, error) {
 
 	if envKey, ok := os.LookupEnv("KEY"); ok {
 		cfg.Key = envKey
+	}
+
+	if envAuditFile, ok := os.LookupEnv("AUDIT_FILE"); ok {
+		cfg.AuditFile = envAuditFile
+	}
+
+	if envAuditURL, ok := os.LookupEnv("AUDIT_URL"); ok {
+		cfg.AuditURL = envAuditURL
 	}
 
 	return cfg, nil

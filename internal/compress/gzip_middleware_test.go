@@ -105,9 +105,9 @@ func TestGzipMiddleware(t *testing.T) {
 			rout := chi.NewRouter()
 
 			rout.Get(`/`, handlers.MainHandler)
-			rout.Post(`/update/`, handlers.UpdateMetricsHandler)
+			rout.Post(`/update/`, handlers.UpdateMetricsHandler(nil))
 			rout.Post(`/value/`, handlers.GetMetricHandler)
-			rout.Post(`/update/{metric_type}/{metric_name}/{metric_value}`, handlers.UpdateMetricsPlainHandler)
+			rout.Post(`/update/{metric_type}/{metric_name}/{metric_value}`, handlers.UpdateMetricsPlainHandler(nil))
 			rout.Get(`/value/{metric_type}/{metric_name}`, handlers.GetMetricPlainHandler)
 
 			req, err := http.NewRequest(tt.method, tt.url, bytes.NewBufferString(tt.body))

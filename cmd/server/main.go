@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/JinFuuMugen/ya_go_metrics/internal/audit"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/compress"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography"
@@ -23,6 +24,20 @@ func main() {
 
 	if err := logger.Init(); err != nil {
 		log.Fatalf("cannot create logger: %s", err)
+	}
+
+	publisher := audit.NewPublisher()
+
+	if cfg.AuditFile != "" {
+		fo, err := audit.NewFileObserver(cfg.AuditFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		publisher.Subscribe(fo)
+	}
+
+	if cfg.AuditURL != "" {
+		publisher.Subscribe(audit.NewHTTPObserver(cfg.AuditURL))
 	}
 
 	var db *database.Database
@@ -50,14 +65,14 @@ func main() {
 	rout.Route("/updates", func(r chi.Router) {
 		r.Use(io.GetDumperMiddleware(cfg, db))
 		r.Use(cryptography.ValidateHashMiddleware(cfg))
-		r.Post("/", handlers.UpdateBatchMetricsHandler)
+		r.Post("/", handlers.UpdateBatchMetricsHandler(publisher))
 	})
 
 	rout.Route("/update", func(r chi.Router) {
 		r.Use(io.GetDumperMiddleware(cfg, db))
 		r.Use(cryptography.ValidateHashMiddleware(cfg))
-		r.Post("/", handlers.UpdateMetricsHandler)
-		r.Post("/{metric_type}/{metric_name}/{metric_value}", handlers.UpdateMetricsPlainHandler)
+		r.Post("/", handlers.UpdateMetricsHandler(publisher))
+		r.Post("/{metric_type}/{metric_name}/{metric_value}", handlers.UpdateMetricsPlainHandler(publisher))
 	})
 
 	rout.Post("/value/", handlers.GetMetricHandler)

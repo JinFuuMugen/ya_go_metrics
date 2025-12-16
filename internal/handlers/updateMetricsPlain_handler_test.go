@@ -59,7 +59,7 @@ func TestUpdateMetricsHandlePlain(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := chi.NewRouter()
-			r.Post("/update/{metric_type}/{metric_name}/{metric_value}", UpdateMetricsPlainHandler)
+			r.Post("/update/{metric_type}/{metric_name}/{metric_value}", UpdateMetricsPlainHandler(nil))
 
 			req, err := http.NewRequest(tt.method, tt.url, nil)
 			if err != nil {
