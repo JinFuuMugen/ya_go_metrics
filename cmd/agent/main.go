@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/logger"
@@ -24,16 +25,45 @@ func main() {
 	pollTicker := cfg.PollTicker()
 	reportTicker := cfg.ReportTicker()
 
-	m := monitors.NewMonitor(storage.NewStorage(), sender.NewSender(*cfg))
+	str := storage.NewStorage()
+	snd := sender.NewSender(*cfg)
+
+	m := monitors.NewRuntimeMonitor(str, snd)
+	g := monitors.NewGopsutilMonitor(str, snd)
+
+	rateLimit := cfg.RateLimit
+	semaphore := make(chan struct{}, rateLimit)
+
+	rateLimitTicker := time.NewTicker(time.Second / time.Duration(rateLimit))
+	defer rateLimitTicker.Stop()
+
 	for {
 		select {
 		case <-pollTicker.C:
-			m.CollectMetrics()
+			m.CollectRuntimeMetrics()
+			if err := g.CollectGopsutil(); err != nil {
+				logger.Fatalf("error collecting gopsutil metrics: %v", err)
+			}
+
 		case <-reportTicker.C:
-			err := m.Dump()
-			if err != nil {
-				logger.Warnf("error dumping metrics: %s", err)
+			select {
+			case semaphore <- struct{}{}:
+				go func() {
+					err := m.Dump()
+					if err != nil {
+						logger.Warnf("error dumping metrics: %w", err)
+					}
+					err = g.Dump()
+					if err != nil {
+						logger.Warnf("error dumping metrics: %w", err)
+					}
+					<-semaphore
+				}()
+			default:
+				logger.Warnf("maximum concurrent Dump executions reached, skipping current dump")
 			}
 		}
+
+		<-rateLimitTicker.C
 	}
 }
