@@ -14,20 +14,24 @@ type runtimeMonitor struct {
 	Processor sender.Sender
 }
 
+// NewRuntimeMonitor creates a new runtime-based monitor.
 func NewRuntimeMonitor(s storage.Storage, p sender.Sender) RuntimeMonitor {
 	return &runtimeMonitor{Storage: s, Processor: p}
 }
 
+// Collect collects runtime metrics.
 func (m *runtimeMonitor) Collect() error {
 	m.CollectRuntimeMetrics()
 	return nil
 }
 
+// CollectRuntimeMetrics collects metrics from the Go runtime.
 func (m *runtimeMonitor) CollectRuntimeMetrics() {
 	m.collectRuntime()
 	m.collectRuntimeSystem()
 }
 
+// Dump sends collected metrics using the configured Sender.
 func (m *runtimeMonitor) Dump() error {
 	c := m.Storage.GetCounters()
 	g := m.Storage.GetGauges()
@@ -38,6 +42,7 @@ func (m *runtimeMonitor) Dump() error {
 	return nil
 }
 
+// SetProcessor updates the Sender used for dumping metrics.
 func (m *runtimeMonitor) SetProcessor(p sender.Sender) {
 	m.Processor = p
 }

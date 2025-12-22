@@ -25,10 +25,16 @@ type gzipResponseWriter struct {
 	writer *gzip.Writer
 }
 
+// Write compresses the response data using gzip before wrting it by response writer.
 func (w *gzipResponseWriter) Write(b []byte) (int, error) {
 	return w.writer.Write(b)
 }
 
+// GzipMiddleware provides transparent grzip compression and decompression for HTTP requests and responses.
+// Incoming requests with Content-Encoding set to "gzip" are decompressed
+// before being passed to the next handler.
+// If the client supports gzip compression (Accept-Encoding contains "gzip"),
+// the response body is compressed before being sent.
 func GzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 

@@ -13,6 +13,8 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 )
 
+// UpdateBatchMetricsHandler returns an HTTP handler for batch metric updates.
+// The handler accepts a JSON array of metrics.
 func UpdateBatchMetricsHandler(
 	auditPublisher *audit.Publisher,
 ) http.HandlerFunc {

@@ -10,11 +10,13 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/models"
 )
 
+// HTTPObserver implements audit event observation by sending events to a remote HTTP endpoint.
 type HTTPObserver struct {
 	url    string
 	client *http.Client
 }
 
+// NewHTTPObserver creates a new HTTPObserver that sends audit events to given URL.
 func NewHTTPObserver(url string) *HTTPObserver {
 	return &HTTPObserver{
 		url: url,
@@ -24,6 +26,7 @@ func NewHTTPObserver(url string) *HTTPObserver {
 	}
 }
 
+// Notify sends the given AuditEvent via POST request with Content-Type:application/json header and JSON-encoded body
 func (ho *HTTPObserver) Notify(auditEvent models.AuditEvent) error {
 	data, err := json.Marshal(auditEvent)
 	if err != nil {

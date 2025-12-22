@@ -9,6 +9,8 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// GetMetricPlainHandler handles requests for getting a metric in plain text format.
+// The handler expects metric type and metric name as URL parameters.
 func GetMetricPlainHandler(w http.ResponseWriter, r *http.Request) {
 	metricType := chi.URLParam(r, "metric_type")
 	metricName := chi.URLParam(r, "metric_name")

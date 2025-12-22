@@ -8,17 +8,35 @@ import (
 	"time"
 )
 
+// ServerConfig stores server configuration parameters.
 type ServerConfig struct {
-	Addr            string        `env:"ADDRESS"`
-	StoreInterval   time.Duration `env:"STORE_INTERVAL"`
-	FileStoragePath string        `env:"FILE_STORAGE_PATH"`
-	Restore         bool          `env:"RESTORE"`
-	DatabaseDSN     string        `env:"DATABASE_DSN"`
-	Key             string        `env:"KEY"`
-	AuditFile       string        `env:"AUDIT_FILE"`
-	AuditURL        string        `env:"AUDIT_URL"`
+	// Addr is the server address in the form host:port.
+	Addr string `env:"ADDRESS"`
+
+	// StoreInterval defines the interval for saving metrics to persistent storage.
+	// A zero value means synchronous saving.
+	StoreInterval time.Duration `env:"STORE_INTERVAL"`
+
+	// FileStoragePath is the path to the file used for storing metrics.
+	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+
+	// Restore enables or disables restoring metrics on startup.
+	Restore bool `env:"RESTORE"`
+
+	// DatabaseDSN is the data source name for connecting to the database.
+	DatabaseDSN string `env:"DATABASE_DSN"`
+
+	// Key is an optional key used for SHA256 request signing and verification.
+	Key string `env:"KEY"`
+
+	// AuditFile defines the file path for audit event logging.
+	AuditFile string `env:"AUDIT_FILE"`
+
+	// AuditURL defines the HTTP endpoint for sending audit events.
+	AuditURL string `env:"AUDIT_URL"`
 }
 
+// LoadServerConfig loads and initializes the server configuration.
 func LoadServerConfig() (*ServerConfig, error) {
 	cfg := &ServerConfig{
 		Addr:            "localhost:8080",

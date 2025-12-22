@@ -11,6 +11,7 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 )
 
+// Run initializes metric persistence according to the server configuration.
 func Run(cfg *config.ServerConfig, db *database.Database) error {
 	if cfg.FileStoragePath != "" {
 
@@ -57,6 +58,9 @@ func runDumper(cfg *config.ServerConfig, db *database.Database) {
 	}
 }
 
+// GetDumperMiddleware returns an HTTP middleware that triggers metric persistence after request handling.
+// When StoreInterval is set to zero or less, metrics are saved synchronously after each request.
+// Metrics are saved either to file or database depending on the server configuration.
 func GetDumperMiddleware(cfg *config.ServerConfig, db *database.Database) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -10,6 +10,9 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 )
 
+// GetMetricHandler handles requests for retrieving a single metric value.
+// Expects a JSON body containing metric ID and type.
+// If the metric is not found, HTTP 404 is returned.
 func GetMetricHandler(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)

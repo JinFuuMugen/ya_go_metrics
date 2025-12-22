@@ -14,6 +14,7 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+// Sender defines an interface for sending collected metrics.
 type Sender interface {
 	Process([]storage.Counter, []storage.Gauge) error
 	Compress(data []byte) ([]byte, error)
@@ -25,10 +26,12 @@ type values struct {
 	key    string
 }
 
+// NewSender creates a new Sender instance using the provided configuration.
 func NewSender(cfg config.Config) *values {
 	return &values{cfg.Addr, resty.New(), cfg.Key}
 }
 
+// Compress compresses data using gzip algorithm.
 func (v *values) Compress(data []byte) ([]byte, error) {
 	var b bytes.Buffer
 	w := gzip.NewWriter(&b)
@@ -45,6 +48,7 @@ func (v *values) Compress(data []byte) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+// Process serializes metrics, compresses them and sends to the server.
 func (v *values) Process(counters []storage.Counter, gauges []storage.Gauge) error {
 	var err error
 
