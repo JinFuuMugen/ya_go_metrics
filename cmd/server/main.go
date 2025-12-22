@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 
 	"github.com/JinFuuMugen/ya_go_metrics/internal/audit"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/compress"
@@ -57,6 +58,8 @@ func main() {
 	}
 
 	rout := chi.NewRouter()
+
+	rout.Mount("/debug", http.DefaultServeMux)
 
 	rout.Get("/", handlers.MainHandler)
 
