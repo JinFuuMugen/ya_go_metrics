@@ -51,6 +51,6 @@ func GetMetricHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(jsonBytes)
 	if err != nil {
-		logger.Fatalf("cannot write response: %s", err)
+		http.Error(w, "cannot write response", http.StatusInternalServerError)
 	}
 }

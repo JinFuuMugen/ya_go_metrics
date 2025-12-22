@@ -34,7 +34,7 @@ func GetMetricPlainHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err = w.Write([]byte(m.GetValueString()))
 	if err != nil {
-		logger.Fatalf("cannot write response: %s", err)
+		http.Error(w, "cannot write response", http.StatusInternalServerError)
 	}
 	w.Header().Add("Content-Type", "text/plain")
 }

@@ -103,7 +103,7 @@ func TestUpdateMetricsHandle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := chi.NewRouter()
-			r.Post("/update/", UpdateMetricsHandler)
+			r.Post("/update/", UpdateMetricsHandler(nil))
 			req, err := http.NewRequest(tt.method, tt.url, strings.NewReader(tt.body))
 			req.Header.Set("Content-Type", "application/json")
 			if err != nil {
