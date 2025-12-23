@@ -9,6 +9,9 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
 )
 
+// ValidateHashMiddleware returns an HTTP middleware that validates the HMAC-SHA256 hash of incoming requests.
+// When a secret key is configured, the middleware also adds a
+// "HashSHA256" header to the response.
 func ValidateHashMiddleware(cfg *config.ServerConfig) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

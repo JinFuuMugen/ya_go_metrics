@@ -8,15 +8,35 @@ import (
 	"time"
 )
 
+// ServerConfig stores server configuration parameters.
 type ServerConfig struct {
-	Addr            string        `env:"ADDRESS"`
-	StoreInterval   time.Duration `env:"STORE_INTERVAL"`
-	FileStoragePath string        `env:"FILE_STORAGE_PATH"`
-	Restore         bool          `env:"RESTORE"`
-	DatabaseDSN     string        `env:"DATABASE_DSN"`
-	Key             string        `env:"KEY"`
+	// Addr is the server address in the form host:port.
+	Addr string `env:"ADDRESS"`
+
+	// StoreInterval defines the interval for saving metrics to persistent storage.
+	// A zero value means synchronous saving.
+	StoreInterval time.Duration `env:"STORE_INTERVAL"`
+
+	// FileStoragePath is the path to the file used for storing metrics.
+	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+
+	// Restore enables or disables restoring metrics on startup.
+	Restore bool `env:"RESTORE"`
+
+	// DatabaseDSN is the data source name for connecting to the database.
+	DatabaseDSN string `env:"DATABASE_DSN"`
+
+	// Key is an optional key used for SHA256 request signing and verification.
+	Key string `env:"KEY"`
+
+	// AuditFile defines the file path for audit event logging.
+	AuditFile string `env:"AUDIT_FILE"`
+
+	// AuditURL defines the HTTP endpoint for sending audit events.
+	AuditURL string `env:"AUDIT_URL"`
 }
 
+// LoadServerConfig loads and initializes the server configuration.
 func LoadServerConfig() (*ServerConfig, error) {
 	cfg := &ServerConfig{
 		Addr:            "localhost:8080",
@@ -24,6 +44,8 @@ func LoadServerConfig() (*ServerConfig, error) {
 		FileStoragePath: "tmp/metrics-db.json",
 		Restore:         true,
 		Key:             "",
+		AuditFile:       "",
+		AuditURL:        "",
 	}
 
 	flag.StringVar(&cfg.Addr, "a", cfg.Addr, "server address")
@@ -32,6 +54,8 @@ func LoadServerConfig() (*ServerConfig, error) {
 	flag.BoolVar(&cfg.Restore, "r", cfg.Restore, "boolean to load/not saved values")
 	flag.StringVar(&cfg.DatabaseDSN, "d", cfg.DatabaseDSN, "database DSN")
 	flag.StringVar(&cfg.Key, "k", cfg.Key, "SHA256 key")
+	flag.StringVar(&cfg.AuditFile, "audit-file", cfg.AuditFile, "audit file path")
+	flag.StringVar(&cfg.AuditURL, "audit-url", cfg.AuditURL, "audit url")
 	flag.Parse()
 
 	if envAddr, ok := os.LookupEnv("ADDRESS"); ok {
@@ -68,6 +92,14 @@ func LoadServerConfig() (*ServerConfig, error) {
 
 	if envKey, ok := os.LookupEnv("KEY"); ok {
 		cfg.Key = envKey
+	}
+
+	if envAuditFile, ok := os.LookupEnv("AUDIT_FILE"); ok {
+		cfg.AuditFile = envAuditFile
+	}
+
+	if envAuditURL, ok := os.LookupEnv("AUDIT_URL"); ok {
+		cfg.AuditURL = envAuditURL
 	}
 
 	return cfg, nil

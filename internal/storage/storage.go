@@ -6,19 +6,31 @@ import (
 	"strings"
 )
 
+// MetricTypeGauge represents the gauge metric type.
 const MetricTypeGauge = "gauge"
+
+// MetricTypeCounter represents the counter metric type.
 const MetricTypeCounter = "counter"
 
 type (
+
+	// Metric defines a common interface for all metric types.
 	Metric interface {
+
+		// GetType returns the metric type.
 		GetType() string
+
+		// GetName returns the metric name.
 		GetName() string
+
+		// GetValueString returns the metric value as a string.
 		GetValueString() string
 
-		//TODO FIXME
+		// GetValue returns the raw metric value.
 		GetValue() interface{}
 	}
 
+	// Storage defines an interface for metric storage backends.
 	Storage interface {
 		SetGauge(string, float64)
 		AddCounter(string, int64)
@@ -28,6 +40,7 @@ type (
 		GetGauge(string) (Gauge, error)
 	}
 
+	// Counter represents a counter metric.
 	Counter struct {
 		Name  string
 		Type  string
@@ -76,6 +89,7 @@ func (g Gauge) GetValueString() string {
 	return f(g.Value)
 }
 
+// NewStorage creates a new in-memory metric storage.
 func NewStorage() Storage {
 	return &MemStorage{
 		GaugeMap:   make(map[string]float64),

@@ -53,12 +53,14 @@ func TestGetMetricPlainHandle(t *testing.T) {
 		},
 	}
 	logger.Init()
-	storage.SetGauge("someG", 123.123)
-	storage.AddCounter("someC", 123)
+
+	st := storage.NewStorage()
+	st.SetGauge("someG", 123.123)
+	st.AddCounter("someC", 123)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := chi.NewRouter()
-			r.Get("/value/{metric_type}/{metric_name}", GetMetricPlainHandler)
+			r.Get("/value/{metric_type}/{metric_name}", GetMetricPlainHandler(st))
 			req, err := http.NewRequest(tt.method, tt.url, nil)
 			if err != nil {
 				t.Fatal(err)

@@ -42,7 +42,7 @@ func main() {
 		case <-pollTicker.C:
 			m.CollectRuntimeMetrics()
 			if err := g.CollectGopsutil(); err != nil {
-				logger.Fatalf("error collecting gopsutil metrics: %v", err)
+				logger.Fatalf("error collecting gopsutil metrics: %s", err)
 			}
 
 		case <-reportTicker.C:
@@ -51,11 +51,11 @@ func main() {
 				go func() {
 					err := m.Dump()
 					if err != nil {
-						logger.Warnf("error dumping metrics: %w", err)
+						logger.Warnf("error dumping metrics: %s", err)
 					}
 					err = g.Dump()
 					if err != nil {
-						logger.Warnf("error dumping metrics: %w", err)
+						logger.Warnf("error dumping metrics: %s", err)
 					}
 					<-semaphore
 				}()

@@ -4,7 +4,9 @@ import (
 	"context"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 
+	"github.com/JinFuuMugen/ya_go_metrics/internal/audit"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/compress"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography"
@@ -12,6 +14,7 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/handlers"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/io"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/logger"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -23,6 +26,20 @@ func main() {
 
 	if err := logger.Init(); err != nil {
 		log.Fatalf("cannot create logger: %s", err)
+	}
+
+	publisher := audit.NewPublisher()
+
+	if cfg.AuditFile != "" {
+		fo, err := audit.NewFileObserver(cfg.AuditFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		publisher.Subscribe(fo)
+	}
+
+	if cfg.AuditURL != "" {
+		publisher.Subscribe(audit.NewHTTPObserver(cfg.AuditURL))
 	}
 
 	var db *database.Database
@@ -41,7 +58,11 @@ func main() {
 		logger.Fatalf("cannot load preload metrics: %s", err)
 	}
 
+	st := storage.NewStorage()
+
 	rout := chi.NewRouter()
+
+	rout.Mount("/debug", http.DefaultServeMux)
 
 	rout.Get("/", handlers.MainHandler)
 
@@ -50,18 +71,18 @@ func main() {
 	rout.Route("/updates", func(r chi.Router) {
 		r.Use(io.GetDumperMiddleware(cfg, db))
 		r.Use(cryptography.ValidateHashMiddleware(cfg))
-		r.Post("/", handlers.UpdateBatchMetricsHandler)
+		r.Post("/", handlers.UpdateBatchMetricsHandler(st, publisher))
 	})
 
 	rout.Route("/update", func(r chi.Router) {
 		r.Use(io.GetDumperMiddleware(cfg, db))
 		r.Use(cryptography.ValidateHashMiddleware(cfg))
-		r.Post("/", handlers.UpdateMetricsHandler)
-		r.Post("/{metric_type}/{metric_name}/{metric_value}", handlers.UpdateMetricsPlainHandler)
+		r.Post("/", handlers.UpdateMetricsHandler(st, publisher))
+		r.Post("/{metric_type}/{metric_name}/{metric_value}", handlers.UpdateMetricsPlainHandler(st, publisher))
 	})
 
-	rout.Post("/value/", handlers.GetMetricHandler)
-	rout.Get("/value/{metric_type}/{metric_name}", handlers.GetMetricPlainHandler)
+	rout.Post("/value/", handlers.GetMetricHandler(st))
+	rout.Get("/value/{metric_type}/{metric_name}", handlers.GetMetricPlainHandler(st))
 
 	if err = http.ListenAndServe(cfg.Addr, compress.GzipMiddleware(rout)); err != nil {
 		logger.Fatalf("cannot start server: %s", err)

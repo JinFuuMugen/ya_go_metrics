@@ -9,6 +9,7 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 )
 
+// MainHandler handles requests for rendering the main HTML page with all current metric values.
 func MainHandler(w http.ResponseWriter, _ *http.Request) {
 
 	tmpl, err := template.ParseFiles("internal/static/index.html")
