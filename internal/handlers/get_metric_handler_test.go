@@ -78,12 +78,13 @@ func TestGetMetricHandle(t *testing.T) {
 		},
 	}
 	logger.Init()
-	storage.SetGauge("GetTestGauge", testValue)
-	storage.AddCounter("GetTestCounter", testDelta)
+	st := storage.NewStorage()
+	st.SetGauge("GetTestGauge", testValue)
+	st.AddCounter("GetTestCounter", testDelta)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := chi.NewRouter()
-			r.Post("/value/", GetMetricHandler)
+			r.Post("/value/", GetMetricHandler(st))
 			req, err := http.NewRequest(tt.method, tt.url, strings.NewReader(tt.body))
 			if err != nil {
 				t.Fatal(err)

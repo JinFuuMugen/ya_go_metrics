@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/JinFuuMugen/ya_go_metrics/internal/logger"
@@ -11,32 +10,42 @@ import (
 
 // GetMetricPlainHandler handles requests for getting a metric in plain text format.
 // The handler expects metric type and metric name as URL parameters.
-func GetMetricPlainHandler(w http.ResponseWriter, r *http.Request) {
-	metricType := chi.URLParam(r, "metric_type")
-	metricName := chi.URLParam(r, "metric_name")
+func GetMetricPlainHandler(
+	st storage.Storage,
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 
-	var m storage.Metric
-	var err error
-	switch metricType {
-	case storage.MetricTypeGauge:
-		m, err = storage.GetGauge(metricName)
-	case storage.MetricTypeCounter:
-		m, err = storage.GetCounter(metricName)
-	default:
-		logger.Errorf("unsupported metric type")
-		http.Error(w, "unsupported metric type", http.StatusNotImplemented)
-		return
-	}
+		metricType := chi.URLParam(r, "metric_type")
+		metricName := chi.URLParam(r, "metric_name")
 
-	if err != nil {
-		logger.Errorf("metric is not found: %s", err)
-		http.Error(w, fmt.Sprintf("metric is not found: %s", err), http.StatusNotFound)
-		return
-	}
+		w.Header().Set("Content-Type", "text/plain")
 
-	_, err = w.Write([]byte(m.GetValueString()))
-	if err != nil {
-		http.Error(w, "cannot write response", http.StatusInternalServerError)
+		switch metricType {
+
+		case storage.MetricTypeGauge:
+			g, err := st.GetGauge(metricName)
+			if err != nil {
+				http.Error(w, "metric not found", http.StatusNotFound)
+				return
+			}
+			if _, err := w.Write([]byte(g.GetValueString())); err != nil {
+				logger.Errorf("cannot write response: %s", err)
+			}
+
+		case storage.MetricTypeCounter:
+			c, err := st.GetCounter(metricName)
+			if err != nil {
+				http.Error(w, "metric not found", http.StatusNotFound)
+				return
+			}
+			if _, err := w.Write([]byte(c.GetValueString())); err != nil {
+				logger.Errorf("cannot write response: %s", err)
+			}
+
+		default:
+			logger.Errorf("unsupported metric type: %s", metricType)
+			http.Error(w, "unsupported metric type", http.StatusNotImplemented)
+			return
+		}
 	}
-	w.Header().Add("Content-Type", "text/plain")
 }

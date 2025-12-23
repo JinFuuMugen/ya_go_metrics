@@ -11,11 +11,11 @@ import (
 )
 
 func ExampleGetMetricPlainHandler() {
-	storage.Reset()
-	storage.AddCounter("requests", 10)
+	st := storage.NewStorage()
+	st.AddCounter("requests", 10)
 
 	r := chi.NewRouter()
-	r.Get("/value/{metric_type}/{metric_name}", handlers.GetMetricPlainHandler)
+	r.Get("/value/{metric_type}/{metric_name}", handlers.GetMetricPlainHandler(st))
 
 	req := httptest.NewRequest(http.MethodGet, "/value/counter/requests", nil)
 	rec := httptest.NewRecorder()

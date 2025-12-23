@@ -18,7 +18,8 @@ import (
 
 func TestGzipMiddleware(t *testing.T) {
 
-	// Gzip encode the string
+	st := storage.NewStorage()
+
 	var gzippedBytes bytes.Buffer
 	gzipWriter := gzip.NewWriter(&gzippedBytes)
 	_, err := gzipWriter.Write([]byte(`{"id":"BuckHashSys","type":"gauge","delta":0,"value":6347}`))
@@ -73,7 +74,7 @@ func TestGzipMiddleware(t *testing.T) {
 			acceptEncodingHeader:  "gzip",
 			body:                  `{"id":"testValue","type":"gauge","value":123.123}`,
 			expectedCode:          400,
-			expectedBody:          "invalid content type for gzip encoding\n",
+			expectedBody:          "invalid gzip body\n",
 		},
 		{
 			name:                  "Unsupported encoding",
@@ -105,10 +106,10 @@ func TestGzipMiddleware(t *testing.T) {
 			rout := chi.NewRouter()
 
 			rout.Get(`/`, handlers.MainHandler)
-			rout.Post(`/update/`, handlers.UpdateMetricsHandler(nil))
-			rout.Post(`/value/`, handlers.GetMetricHandler)
-			rout.Post(`/update/{metric_type}/{metric_name}/{metric_value}`, handlers.UpdateMetricsPlainHandler(nil))
-			rout.Get(`/value/{metric_type}/{metric_name}`, handlers.GetMetricPlainHandler)
+			rout.Post(`/update/`, handlers.UpdateMetricsHandler(st, nil))
+			rout.Post(`/value/`, handlers.GetMetricHandler(st))
+			rout.Post(`/update/{metric_type}/{metric_name}/{metric_value}`, handlers.UpdateMetricsPlainHandler(st, nil))
+			rout.Get(`/value/{metric_type}/{metric_name}`, handlers.GetMetricPlainHandler(st))
 
 			req, err := http.NewRequest(tt.method, tt.url, bytes.NewBufferString(tt.body))
 			if err != nil {

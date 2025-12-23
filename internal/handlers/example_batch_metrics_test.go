@@ -11,9 +11,9 @@ import (
 )
 
 func ExampleUpdateBatchMetricsHandler() {
-	storage.Reset()
+	st := storage.NewStorage()
 
-	handler := handlers.UpdateBatchMetricsHandler(nil)
+	handler := handlers.UpdateBatchMetricsHandler(st, nil)
 
 	body := []byte(`[
 		{"id":"requests","type":"counter","delta":5},
@@ -25,10 +25,13 @@ func ExampleUpdateBatchMetricsHandler() {
 
 	handler.ServeHTTP(rec, req)
 
-	if rec.Code == http.StatusOK {
-		fmt.Println("batch metrics updated")
-	}
+	counter, _ := st.GetCounter("requests")
+	gauge, _ := st.GetGauge("temperature")
+
+	fmt.Println(counter.Value)
+	fmt.Println(gauge.Value)
 
 	// Output:
-	// batch metrics updated
+	// 5
+	// 36.6
 }

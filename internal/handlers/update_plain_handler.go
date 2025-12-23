@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,7 +12,9 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// UpdateMetricsPlainHandler returns an HTTP handler that updates a single metric using plain-text URL parameters.
 func UpdateMetricsPlainHandler(
+	st storage.Storage,
 	auditPublisher *audit.Publisher,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -23,24 +24,27 @@ func UpdateMetricsPlainHandler(
 		metricValue := chi.URLParam(r, "metric_value")
 
 		switch metricType {
+
 		case storage.MetricTypeCounter:
-			v, err := strconv.ParseInt(metricValue, 10, 64)
+			delta, err := strconv.ParseInt(metricValue, 10, 64)
 			if err != nil {
-				logger.Errorf("not a valid metric value: %s", err)
-				http.Error(w, fmt.Sprintf("not a valid metric value: %s", err), http.StatusBadRequest)
+				logger.Errorf("invalid counter value: %s", err)
+				http.Error(w, "invalid counter value", http.StatusBadRequest)
 				return
 			}
-			storage.AddCounter(metricName, v)
+			st.AddCounter(metricName, delta)
+
 		case storage.MetricTypeGauge:
-			v, err := strconv.ParseFloat(metricValue, 64)
+			value, err := strconv.ParseFloat(metricValue, 64)
 			if err != nil {
-				logger.Errorf("not a valid metric value: %s", err)
-				http.Error(w, fmt.Sprintf("not a valid metric value: %s", err), http.StatusBadRequest)
+				logger.Errorf("invalid gauge value: %s", err)
+				http.Error(w, "invalid gauge value", http.StatusBadRequest)
 				return
 			}
-			storage.SetGauge(metricName, v)
+			st.SetGauge(metricName, value)
+
 		default:
-			logger.Errorf("unsupported metric type")
+			logger.Errorf("unsupported metric type: %s", metricType)
 			http.Error(w, "unsupported metric type", http.StatusNotImplemented)
 			return
 		}
@@ -53,7 +57,7 @@ func UpdateMetricsPlainHandler(
 			})
 		}
 
-		w.Header().Set("content-type", "text/plain; charset=utf-8")
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 	}
 }

@@ -21,9 +21,9 @@ func BenchmarkBatchUpdateHandler(b *testing.B) {
 			Value: &v,
 		})
 	}
-
+	st := storage.NewStorage()
 	body, _ := json.Marshal(metrics)
-	h := UpdateBatchMetricsHandler(nil)
+	h := UpdateBatchMetricsHandler(st, nil)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

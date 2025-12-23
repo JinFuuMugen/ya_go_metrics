@@ -99,11 +99,11 @@ func TestUpdateMetricsHandle(t *testing.T) {
 		},
 	}
 	logger.Init()
-	storage.Reset()
+	st := storage.NewStorage()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := chi.NewRouter()
-			r.Post("/update/", UpdateMetricsHandler(nil))
+			r.Post("/update/", UpdateMetricsHandler(st, nil))
 			req, err := http.NewRequest(tt.method, tt.url, strings.NewReader(tt.body))
 			req.Header.Set("Content-Type", "application/json")
 			if err != nil {

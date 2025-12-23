@@ -1,6 +1,11 @@
 package audit
 
-import "github.com/JinFuuMugen/ya_go_metrics/internal/models"
+import (
+	"reflect"
+
+	"github.com/JinFuuMugen/ya_go_metrics/internal/logger"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/models"
+)
 
 // Publisher implements subscribe pattern, allowing multiple Observers to receive same events.
 type Publisher struct {
@@ -20,6 +25,9 @@ func (p *Publisher) Subscribe(o Observer) {
 // Publish sends given AuditEvent to subscribers.
 func (p *Publisher) Publish(auditEvent models.AuditEvent) {
 	for _, o := range p.observers {
-		_ = o.Notify(auditEvent)
+		err := o.Notify(auditEvent)
+		if err != nil {
+			logger.Errorf("cannot send audit event %s to %s : %w", auditEvent, reflect.TypeOf(o), err)
+		}
 	}
 }

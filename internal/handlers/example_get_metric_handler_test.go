@@ -13,12 +13,14 @@ import (
 )
 
 func ExampleGetMetricHandler() {
-	storage.Reset()
-	storage.SetGauge("temperature", 36.6)
+	st := storage.NewStorage()
+	st.SetGauge("temperature", 36.6)
+
+	handler := handlers.GetMetricHandler(st)
 
 	reqMetric := models.Metrics{
 		ID:    "temperature",
-		MType: "gauge",
+		MType: storage.MetricTypeGauge,
 	}
 
 	body, _ := json.Marshal(reqMetric)
@@ -26,11 +28,9 @@ func ExampleGetMetricHandler() {
 	req := httptest.NewRequest(http.MethodPost, "/value", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
 
-	handlers.GetMetricHandler(rec, req)
+	handler.ServeHTTP(rec, req)
 
-	if rec.Code == http.StatusOK {
-		fmt.Println(rec.Body.String())
-	}
+	fmt.Println(rec.Body.String())
 
 	// Output:
 	// {"id":"temperature","type":"gauge","value":36.6}

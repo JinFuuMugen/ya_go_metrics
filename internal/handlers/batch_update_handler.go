@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -16,23 +14,22 @@ import (
 // UpdateBatchMetricsHandler returns an HTTP handler for batch metric updates.
 // The handler accepts a JSON array of metrics.
 func UpdateBatchMetricsHandler(
+	st storage.Storage,
 	auditPublisher *audit.Publisher,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		var buf bytes.Buffer
-		_, err := buf.ReadFrom(r.Body)
+		body, err := readRequestBody(r)
 		if err != nil {
-			logger.Errorf("cannot read request body: %s", err)
-			http.Error(w, fmt.Sprintf("cannot read request body: %s", err), http.StatusBadRequest)
+			logger.Errorf(err.Error())
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
 		var metrics []models.Metrics
-		err = json.Unmarshal(buf.Bytes(), &metrics)
-		if err != nil {
-			logger.Errorf("cannot process body: %s", err)
-			http.Error(w, fmt.Sprintf("cannot process body: %s", err), http.StatusBadRequest)
+		if err := json.Unmarshal(body, &metrics); err != nil {
+			logger.Errorf("cannot unmarshal metrics: %s", err)
+			http.Error(w, "invalid request body", http.StatusBadRequest)
 			return
 		}
 
@@ -44,28 +41,28 @@ func UpdateBatchMetricsHandler(
 			case storage.MetricTypeCounter:
 				delta, err := metric.GetDelta()
 				if err != nil {
-					logger.Errorf("cannot get counter delta: %s", err)
+					logger.Errorf("invalid counter metric: %s", err)
 					http.Error(w, "bad counter metric", http.StatusBadRequest)
 					return
 				}
-				storage.AddCounter(metric.ID, delta)
-				metricNames = append(metricNames, metric.ID)
+				st.AddCounter(metric.ID, delta)
 
 			case storage.MetricTypeGauge:
 				value, err := metric.GetValue()
 				if err != nil {
-					logger.Errorf("cannot get gauge value: %s", err)
+					logger.Errorf("invalid gauge metric: %s", err)
 					http.Error(w, "bad gauge metric", http.StatusBadRequest)
 					return
 				}
-				storage.SetGauge(metric.ID, value)
-				metricNames = append(metricNames, metric.ID)
+				st.SetGauge(metric.ID, value)
 
 			default:
 				logger.Errorf("unsupported metric type: %s", metric.MType)
 				http.Error(w, "unsupported metric type", http.StatusNotImplemented)
 				return
 			}
+
+			metricNames = append(metricNames, metric.ID)
 		}
 
 		if auditPublisher != nil {
