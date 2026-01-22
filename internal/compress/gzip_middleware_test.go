@@ -23,11 +23,11 @@ func TestGzipMiddleware(t *testing.T) {
 	gzipWriter := gzip.NewWriter(&gzippedBytes)
 	_, err := gzipWriter.Write([]byte(`{"id":"BuckHashSys","type":"gauge","delta":0,"value":6347}`))
 	if err != nil {
-		t.Fatalf("error gzipping data: %w", err)
+		t.Fatalf("error gzipping data: %s", err)
 	}
 	err = gzipWriter.Close()
 	if err != nil {
-		t.Fatalf("error closing gzip writer: %w", err)
+		t.Fatalf("error closing gzip writer: %s", err)
 	}
 
 	testCases := []struct {
