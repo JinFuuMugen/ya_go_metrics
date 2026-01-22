@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -24,11 +23,11 @@ func TestGzipMiddleware(t *testing.T) {
 	gzipWriter := gzip.NewWriter(&gzippedBytes)
 	_, err := gzipWriter.Write([]byte(`{"id":"BuckHashSys","type":"gauge","delta":0,"value":6347}`))
 	if err != nil {
-		log.Fatal("error gzipping data: ", err)
+		t.Fatalf("error gzipping data: ", err)
 	}
 	err = gzipWriter.Close()
 	if err != nil {
-		log.Fatal("error closing gzip writer: ", err)
+		t.Fatalf("error closing gzip writer: ", err)
 	}
 
 	testCases := []struct {

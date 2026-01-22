@@ -2,9 +2,10 @@ package logger
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 var log zap.SugaredLogger
@@ -25,11 +26,11 @@ func Warnf(template string, args ...any) {
 }
 
 func Fatalf(template string, args ...any) {
-	log.Fatalf(template, args)
+	log.Fatalf(template, args...)
 }
 
 func Errorf(template string, args ...any) {
-	log.Errorf(template, args)
+	log.Errorf(template, args...)
 }
 
 func HandlerLogger(h http.HandlerFunc) http.HandlerFunc {
