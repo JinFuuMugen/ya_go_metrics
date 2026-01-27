@@ -3,6 +3,8 @@ package models
 import "errors"
 
 // Metrics represents a metric entity.
+//
+//generate:reset
 type Metrics struct {
 	// ID is the metric name.
 	ID string `json:"id"`
