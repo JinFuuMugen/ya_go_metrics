@@ -9,8 +9,6 @@ import (
 	"github.com/shirou/gopsutil/mem"
 )
 
-//generate:reset
-//go:generate go run ../../cmd/reset
 type gopsutilMonitor struct {
 	Storage   storage.Storage
 	Processor sender.Sender

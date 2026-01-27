@@ -7,7 +7,6 @@ import (
 // MemStorage is an in-memory storage for metrics.
 //
 //generate:reset
-//go:generate go run ../../cmd/reset
 type MemStorage struct {
 	// GaugeMap stores gauge metrics by name.
 	GaugeMap map[string]float64
