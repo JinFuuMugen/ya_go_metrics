@@ -8,6 +8,8 @@ import (
 )
 
 // Publisher implements subscribe pattern, allowing multiple Observers to receive same events.
+
+//generate:reset
 type Publisher struct {
 	observers []Observer
 }

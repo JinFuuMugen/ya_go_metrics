@@ -20,6 +20,7 @@ var gzipReaderPool = sync.Pool{
 	},
 }
 
+//generate:reset
 type gzipResponseWriter struct {
 	http.ResponseWriter
 	writer *gzip.Writer

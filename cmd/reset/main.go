@@ -150,7 +150,7 @@ func resetLine(name string, t ast.Expr) string {
 		if isPrimitive(tt.Name) {
 			return "\t" + name + " = " + zeroVal(tt.Name) + "\n"
 		}
-		return "\t// TODO: unsupported non-primitive type " + tt.Name + "\n"
+		return "\t//unsupported non-primitive type " + tt.Name + "\n"
 
 	case *ast.ArrayType:
 		if tt.Len == nil {
@@ -178,11 +178,11 @@ func pointerResetLine(name string, tt *ast.StarExpr) string {
 		if isPrimitive(elem.Name) {
 			b.WriteString("\t\t*" + name + " = " + zeroVal(elem.Name) + "\n")
 		} else {
-			b.WriteString("\t\t// TODO: unsupported pointer to " + elem.Name + "\n")
+			b.WriteString("\t\t//unsupported pointer to " + elem.Name + "\n")
 		}
 
 	default:
-		b.WriteString("\t\t// TODO: more complex pointer type\n")
+		b.WriteString("\t\t//complex pointer type\n")
 	}
 
 	b.WriteString("\t}\n")
