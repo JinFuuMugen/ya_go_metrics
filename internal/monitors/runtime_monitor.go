@@ -9,8 +9,6 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 )
 
-//generate:reset
-//go:generate go run ../../cmd/reset
 type runtimeMonitor struct {
 	Storage   storage.Storage
 	Processor sender.Sender

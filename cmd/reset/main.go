@@ -17,6 +17,7 @@ type StructInfo struct {
 	Dir     string
 	Name    string
 	Fields  []*ast.Field
+	Pkg     *packages.Package
 }
 
 func main() {
@@ -40,7 +41,7 @@ func main() {
 			continue
 		}
 
-		for idx, file := range pkg.Syntax {
+		for _, file := range pkg.Syntax {
 			for _, decl := range file.Decls {
 				gen, ok := decl.(*ast.GenDecl)
 				if !ok || gen.Tok != token.TYPE {
@@ -62,9 +63,9 @@ func main() {
 							Dir:     dir,
 							Name:    ts.Name.Name,
 							Fields:  st.Fields.List,
+							Pkg:     pkg,
 						}
 						found[dir] = append(found[dir], info)
-						_ = idx
 					}
 				}
 			}
@@ -126,7 +127,7 @@ func sortStructsByName(list []StructInfo) {
 }
 
 func generateResetMethod(st StructInfo) string {
-	r := receiverVar(st.Name)
+	r := receiverVar(st.Name, st.Pkg)
 	var b strings.Builder
 
 	b.WriteString(fmt.Sprintf("func (%s *%s) Reset() {\n", r, st.Name))
@@ -145,46 +146,38 @@ func generateResetMethod(st StructInfo) string {
 
 func resetLine(name string, t ast.Expr) string {
 	switch tt := t.(type) {
-
 	case *ast.Ident:
 		if isPrimitive(tt.Name) {
 			return "\t" + name + " = " + zeroVal(tt.Name) + "\n"
 		}
-		return "\t//unsupported non-primitive type " + tt.Name + "\n"
-
+		return "\t" + name + " = " + exprString(t) + "{}\n"
 	case *ast.ArrayType:
 		if tt.Len == nil {
 			return "\tif " + name + " != nil {\n\t\t" + name + " = " + name + "[:0]\n\t}\n"
 		}
 		return "\t" + name + " = " + exprString(t) + "{}\n"
-
 	case *ast.MapType:
 		return "\tif " + name + " != nil {\n\t\tclear(" + name + ")\n\t}\n"
-
 	case *ast.StarExpr:
 		return pointerResetLine(name, tt)
-
 	default:
-		return "\t// skip " + exprString(t) + "\n"
+		return "\t" + name + " = " + exprString(t) + "{}\n"
 	}
 }
 
 func pointerResetLine(name string, tt *ast.StarExpr) string {
 	var b strings.Builder
 	b.WriteString("\tif " + name + " != nil {\n")
-
 	switch elem := tt.X.(type) {
 	case *ast.Ident:
 		if isPrimitive(elem.Name) {
 			b.WriteString("\t\t*" + name + " = " + zeroVal(elem.Name) + "\n")
 		} else {
-			b.WriteString("\t\t//unsupported pointer to " + elem.Name + "\n")
+			b.WriteString("\t\t*" + name + " = " + exprString(elem) + "{}\n")
 		}
-
 	default:
-		b.WriteString("\t\t//complex pointer type\n")
+		b.WriteString("\t\t*" + name + " = " + exprString(tt.X) + "{}\n")
 	}
-
 	b.WriteString("\t}\n")
 	return b.String()
 }
@@ -229,9 +222,48 @@ func exprString(e ast.Expr) string {
 	return ""
 }
 
-func receiverVar(name string) string {
-	if name == "" {
-		return "r"
+func receiverVar(typeName string, pkg *packages.Package) string {
+	r := findExistingReceiver(typeName, pkg)
+	if r != "" {
+		return r
 	}
-	return strings.ToLower(name[:1])
+	return strings.ToLower(string(typeName[0]))
+}
+
+func findExistingReceiver(typeName string, pkg *packages.Package) string {
+	for _, file := range pkg.Syntax {
+		for _, decl := range file.Decls {
+			funcDecl, ok := decl.(*ast.FuncDecl)
+			if !ok || funcDecl.Recv == nil {
+				continue
+			}
+			if isReceiverOfType(funcDecl, typeName) {
+				if len(funcDecl.Recv.List) > 0 {
+					if len(funcDecl.Recv.List[0].Names) > 0 {
+						return funcDecl.Recv.List[0].Names[0].Name
+					}
+				}
+			}
+		}
+	}
+	return ""
+}
+
+func isReceiverOfType(funcDecl *ast.FuncDecl, typeName string) bool {
+	if funcDecl.Recv == nil {
+		return false
+	}
+	for _, field := range funcDecl.Recv.List {
+		switch t := field.Type.(type) {
+		case *ast.StarExpr:
+			if ident, ok := t.X.(*ast.Ident); ok && ident.Name == typeName {
+				return true
+			}
+		case *ast.Ident:
+			if t.Name == typeName {
+				return true
+			}
+		}
+	}
+	return false
 }
