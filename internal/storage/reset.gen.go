@@ -12,4 +12,3 @@ func (ms *MemStorage) Reset() {
 		clear(ms.CounterMap)
 	}
 }
-
