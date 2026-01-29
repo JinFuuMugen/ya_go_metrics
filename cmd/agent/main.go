@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -10,6 +11,10 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/sender"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 )
+
+var buildVersion = "N/A"
+var buildDate = "N/A"
+var buildCommit = "N/A"
 
 func main() {
 	cfg, err := config.New()
@@ -21,6 +26,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("cannot initialize logger: %s", err)
 	}
+
+	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
 
 	pollTicker := cfg.PollTicker()
 	reportTicker := cfg.ReportTicker()

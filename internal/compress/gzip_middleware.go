@@ -21,6 +21,7 @@ var gzipReaderPool = sync.Pool{
 }
 
 //generate:reset
+//go:generate go run ../../cmd/reset/main.go
 type gzipResponseWriter struct {
 	http.ResponseWriter
 	writer *gzip.Writer

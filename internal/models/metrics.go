@@ -5,6 +5,7 @@ import "errors"
 // Metrics represents a metric entity.
 //
 //generate:reset
+//go:generate go run ../../cmd/reset/main.go
 type Metrics struct {
 	// ID is the metric name.
 	ID string `json:"id"`

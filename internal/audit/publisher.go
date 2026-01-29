@@ -10,6 +10,7 @@ import (
 // Publisher implements subscribe pattern, allowing multiple Observers to receive same events.
 
 //generate:reset
+//go:generate go run ../../cmd/reset/main.go
 type Publisher struct {
 	observers []Observer
 }
