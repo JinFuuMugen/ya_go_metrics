@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -17,6 +18,10 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 	"github.com/go-chi/chi/v5"
 )
+
+var buildVersion = "N/A"
+var buildDate = "N/A"
+var buildCommit = "N/A"
 
 func main() {
 	cfg, err := config.LoadServerConfig()
@@ -57,6 +62,8 @@ func main() {
 	if err := io.Run(cfg, db); err != nil {
 		logger.Fatalf("cannot load preload metrics: %s", err)
 	}
+
+	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
 
 	st := storage.NewStorage()
 
