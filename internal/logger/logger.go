@@ -15,7 +15,6 @@ func Init() error {
 	if err != nil {
 		return fmt.Errorf("cannot initialize zap logger: %w", err)
 	}
-	defer logger.Sync()
 	sug := *logger.Sugar()
 	log = sug
 	return nil
@@ -38,7 +37,6 @@ func HandlerLogger(h http.HandlerFunc) http.HandlerFunc {
 		start := time.Now()
 		uri := r.RequestURI
 		method := r.Method
-		duration := time.Since(start)
 
 		responseData := &responseData{
 			status: http.StatusOK,
@@ -50,6 +48,8 @@ func HandlerLogger(h http.HandlerFunc) http.HandlerFunc {
 		}
 
 		h.ServeHTTP(&lw, r)
+
+		duration := time.Since(start)
 
 		log.Infoln(
 			"uri", uri,

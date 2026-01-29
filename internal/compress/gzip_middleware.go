@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/JinFuuMugen/ya_go_metrics/internal/logger"
 )
 
 var gzipWriterPool = sync.Pool{
@@ -38,7 +40,7 @@ func (w *gzipResponseWriter) Write(b []byte) (int, error) {
 // If the client supports gzip compression (Accept-Encoding contains "gzip"),
 // the response body is compressed before being sent.
 func GzipMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return logger.HandlerLogger(func(w http.ResponseWriter, r *http.Request) {
 
 		if r.Header.Get("Content-Encoding") == "gzip" {
 			gr := gzipReaderPool.Get().(*gzip.Reader)
