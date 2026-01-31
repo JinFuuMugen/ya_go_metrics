@@ -23,5 +23,5 @@ vendor/
 # IDEs directories
 .idea
 .vscode
-
 metricstest_v2
+tmp/*.log

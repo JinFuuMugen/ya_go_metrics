@@ -1,4 +1,3 @@
-// internal/io/dbio/dbio.go
 package dbio
 
 import (
@@ -10,6 +9,7 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 )
 
+// SaveMetricsDB saves counter and gauge metrics to the database.
 func SaveMetricsDB(db *database.Database, counters []storage.Counter, gauges []storage.Gauge) error {
 	if db == nil {
 		return errors.New("db is nil")
@@ -42,6 +42,7 @@ func SaveMetricsDB(db *database.Database, counters []storage.Counter, gauges []s
 	return nil
 }
 
+// LoadMetricsDB loads metrics from the database into in-memory storage.
 func LoadMetricsDB(db *database.Database) error {
 	if db == nil {
 		return errors.New("db is nil")

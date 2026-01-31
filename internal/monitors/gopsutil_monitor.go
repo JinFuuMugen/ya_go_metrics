@@ -14,14 +14,17 @@ type gopsutilMonitor struct {
 	Processor sender.Sender
 }
 
+// NewGopsutilMonitor creates a new gopsutil-based monitor.
 func NewGopsutilMonitor(s storage.Storage, p sender.Sender) GopsutilMonitor {
 	return &gopsutilMonitor{s, p}
 }
 
+// Collect collects system metrics using gopsutil.
 func (m *gopsutilMonitor) Collect() error {
 	return m.CollectGopsutil()
 }
 
+// CollectGopsutil collects CPU and memory metrics from the system.
 func (m *gopsutilMonitor) CollectGopsutil() error {
 
 	vm, err := mem.VirtualMemory()
@@ -41,6 +44,7 @@ func (m *gopsutilMonitor) CollectGopsutil() error {
 	return nil
 }
 
+// Dump sends collected metrics using the configured Sender.
 func (m *gopsutilMonitor) Dump() error {
 	c := m.Storage.GetCounters()
 	g := m.Storage.GetGauges()
@@ -51,6 +55,7 @@ func (m *gopsutilMonitor) Dump() error {
 	return nil
 }
 
+// SetProcessor updates the Sender used for dumping metrics.
 func (m *gopsutilMonitor) SetProcessor(p sender.Sender) {
 	m.Processor = p
 }

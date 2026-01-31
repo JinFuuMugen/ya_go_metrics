@@ -9,15 +9,18 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+// Database provides a wrapper around sql.DB for working with PostgreSQL.
 type Database struct {
 	db  *sql.DB
 	dsn string
 }
 
+// New creates a new Database instance using the provided DSN.
 func New(dsn string) *Database {
 	return &Database{dsn: dsn}
 }
 
+// Connect establishes a connection to the database.
 func (d *Database) Connect() error {
 	if d.db != nil {
 		return nil
@@ -30,6 +33,7 @@ func (d *Database) Connect() error {
 	return nil
 }
 
+// Migrate initializes the database schema if it does not exist.
 func (d *Database) Migrate(ctx context.Context) error {
 	if d.db == nil {
 		return fmt.Errorf("database is not connected")
@@ -43,6 +47,7 @@ func (d *Database) Migrate(ctx context.Context) error {
 	return nil
 }
 
+// Exec executes a query without returning any rows.
 func (d *Database) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	if d.db == nil {
 		return nil, fmt.Errorf("database is not connected")
@@ -50,6 +55,7 @@ func (d *Database) Exec(ctx context.Context, query string, args ...any) (sql.Res
 	return d.db.ExecContext(ctx, query, args...)
 }
 
+// Ping verifies that the database connection is alive.
 func (d *Database) Ping(ctx context.Context) error {
 	if d.db == nil {
 		return fmt.Errorf("database is not connected")
@@ -57,6 +63,7 @@ func (d *Database) Ping(ctx context.Context) error {
 	return d.db.PingContext(ctx)
 }
 
+// Query executes a query that returns rows.
 func (d *Database) Query(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
 	if d.db == nil {
 		return nil, fmt.Errorf("database is not connected")
@@ -64,6 +71,7 @@ func (d *Database) Query(ctx context.Context, query string, args ...any) (*sql.R
 	return d.db.QueryContext(ctx, query, args...)
 }
 
+// Close closes the database connection.
 func (d *Database) Close() error {
 	if d.db == nil {
 		return nil

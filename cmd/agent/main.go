@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -10,6 +11,10 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/sender"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 )
+
+var buildVersion = "N/A"
+var buildDate = "N/A"
+var buildCommit = "N/A"
 
 func main() {
 	cfg, err := config.New()
@@ -21,6 +26,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("cannot initialize logger: %s", err)
 	}
+
+	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
 
 	pollTicker := cfg.PollTicker()
 	reportTicker := cfg.ReportTicker()
@@ -42,7 +49,7 @@ func main() {
 		case <-pollTicker.C:
 			m.CollectRuntimeMetrics()
 			if err := g.CollectGopsutil(); err != nil {
-				logger.Fatalf("error collecting gopsutil metrics: %v", err)
+				logger.Fatalf("error collecting gopsutil metrics: %s", err)
 			}
 
 		case <-reportTicker.C:
@@ -51,11 +58,11 @@ func main() {
 				go func() {
 					err := m.Dump()
 					if err != nil {
-						logger.Warnf("error dumping metrics: %w", err)
+						logger.Warnf("error dumping metrics: %s", err)
 					}
 					err = g.Dump()
 					if err != nil {
-						logger.Warnf("error dumping metrics: %w", err)
+						logger.Warnf("error dumping metrics: %s", err)
 					}
 					<-semaphore
 				}()

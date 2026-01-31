@@ -8,14 +8,25 @@ import (
 	"github.com/caarlos0/env"
 )
 
+// Config stores agent configuration parameters.
 type Config struct {
-	Addr           string `env:"ADDRESS"`
-	PollInterval   int    `env:"POLL_INTERVAL"`
-	ReportInterval int    `env:"REPORT_INTERVAL"`
-	Key            string `env:"KEY"`
-	RateLimit      int    `env:"RATE_LIMIT"`
+	// Addr is the server address in the form host:port.
+	Addr string `env:"ADDRESS"`
+
+	// PollInterval defines the interval (in seconds) between metric collection.
+	PollInterval int `env:"POLL_INTERVAL"`
+
+	// ReportInterval defines the interval (in seconds) between metric reports.
+	ReportInterval int `env:"REPORT_INTERVAL"`
+
+	// Key is an optional key used for SHA256 request signing.
+	Key string `env:"KEY"`
+
+	// RateLimit defines the maximum number of outgoing requests.
+	RateLimit int `env:"RATE_LIMIT"`
 }
 
+// New creates and initializes a Config instace.
 func New() (*Config, error) {
 	cfg := &Config{}
 	flag.StringVar(&cfg.Addr, `a`, cfg.Addr, `server address`)
@@ -48,10 +59,12 @@ func New() (*Config, error) {
 	return cfg, nil
 }
 
+// PollTicker returns a ticker that triggers metric collection.
 func (cfg *Config) PollTicker() *time.Ticker {
 	return time.NewTicker(time.Duration(cfg.PollInterval) * time.Second)
 }
 
+// ReportTicker return a ticker that triggers metric reporting.
 func (cfg *Config) ReportTicker() *time.Ticker {
 	return time.NewTicker(time.Duration(cfg.ReportInterval) * time.Second)
 }

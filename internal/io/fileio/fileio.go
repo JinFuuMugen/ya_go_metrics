@@ -12,6 +12,7 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 )
 
+// SaveMetricsFile saves all provided metrics to a file in JSON format.
 func SaveMetricsFile(filepath string, counters []storage.Counter, gauges []storage.Gauge) error {
 	var metrics []models.Metrics
 
@@ -47,6 +48,7 @@ func SaveMetricsFile(filepath string, counters []storage.Counter, gauges []stora
 	return nil
 }
 
+// LoadMetricsFile loads metrics from a JSON file into in-memory storage.
 func LoadMetricsFile(filepath string) error {
 	f, err := os.Open(filepath)
 	if err != nil {

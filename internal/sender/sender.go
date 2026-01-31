@@ -10,10 +10,16 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/models"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/pool"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 	"github.com/go-resty/resty/v2"
 )
 
+var bufferPool = pool.New(func() *bytes.Buffer {
+	return &bytes.Buffer{}
+})
+
+// Sender defines an interface for sending collected metrics.
 type Sender interface {
 	Process([]storage.Counter, []storage.Gauge) error
 	Compress(data []byte) ([]byte, error)
@@ -25,26 +31,33 @@ type values struct {
 	key    string
 }
 
+// NewSender creates a new Sender instance using the provided configuration.
 func NewSender(cfg config.Config) *values {
 	return &values{cfg.Addr, resty.New(), cfg.Key}
 }
 
+// Compress compresses data using gzip algorithm.
 func (v *values) Compress(data []byte) ([]byte, error) {
-	var b bytes.Buffer
-	w := gzip.NewWriter(&b)
 
-	_, err := w.Write(data)
-	if err != nil {
+	b := bufferPool.Get()
+	b.Reset()
+	defer bufferPool.Put(b)
+
+	w := gzip.NewWriter(b)
+
+	if _, err := w.Write(data); err != nil {
 		return nil, fmt.Errorf("failed write data to compress temporary buffer: %v", err)
 	}
-
-	err = w.Close()
-	if err != nil {
+	if err := w.Close(); err != nil {
 		return nil, fmt.Errorf("failed compress data: %v", err)
 	}
-	return b.Bytes(), nil
+
+	compressed := make([]byte, b.Len())
+	copy(compressed, b.Bytes())
+	return compressed, nil
 }
 
+// Process serializes metrics, compresses them and sends to the server.
 func (v *values) Process(counters []storage.Counter, gauges []storage.Gauge) error {
 	var err error
 
