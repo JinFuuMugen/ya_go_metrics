@@ -3,12 +3,14 @@ package sender
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/rsa"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography/rsa_crypto"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/models"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/pool"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
@@ -26,14 +28,15 @@ type Sender interface {
 }
 
 type values struct {
-	addr   string
-	client *resty.Client
-	key    string
+	addr      string
+	client    *resty.Client
+	key       string
+	publicKey *rsa.PublicKey
 }
 
 // NewSender creates a new Sender instance using the provided configuration.
-func NewSender(cfg config.Config) *values {
-	return &values{cfg.Addr, resty.New(), cfg.Key}
+func NewSender(cfg config.Config, publicKey *rsa.PublicKey) *values {
+	return &values{cfg.Addr, resty.New(), cfg.Key, publicKey}
 }
 
 // Compress compresses data using gzip algorithm.
@@ -90,17 +93,36 @@ func (v *values) Process(counters []storage.Counter, gauges []storage.Gauge) err
 		return fmt.Errorf("error while compressing data: %w", err)
 	}
 
+	dataToSend := compressedData
+	encrypted := false
+
+	if v.publicKey != nil {
+		dataToSend, err = rsa_crypto.Encrypt(v.publicKey, compressedData)
+		if err != nil {
+			return fmt.Errorf("failed encrypt data: %w", err)
+		}
+		encrypted = true
+	}
 	url := "http://" + v.addr + "/updates/"
+
+	req := v.client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Content-Encoding", "gzip").
+		SetBody(dataToSend)
+
+	if encrypted {
+		req.SetHeader("X-Encrypted", "rsa")
+	}
 
 	if v.key != "" {
 		hash := cryptography.GetHMACSHA256(jsonData, v.key)
-		hashString := hex.EncodeToString(hash)
-		_, err = v.client.R().SetHeader("Content-Type", "application/json").SetHeader("Content-Encoding", "gzip").SetHeader("HashSHA256", hashString).SetBody(compressedData).Post(url)
-	} else {
-		_, err = v.client.R().SetHeader("Content-Type", "application/json").SetHeader("Content-Encoding", "gzip").SetBody(compressedData).Post(url)
+		req.SetHeader("HashSHA256", hex.EncodeToString(hash))
 	}
+
+	_, err = req.Post(url)
 	if err != nil {
 		return fmt.Errorf("cannot send HTTP-Request: %w", err)
 	}
+
 	return nil
 }

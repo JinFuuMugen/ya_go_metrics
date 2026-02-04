@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/rsa"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/compress"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography/rsa_crypto"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/database"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/handlers"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/io"
@@ -60,14 +62,22 @@ func main() {
 	}
 
 	if err := io.Run(cfg, db); err != nil {
-		logger.Fatalf("cannot load preload metrics: %s", err)
+		log.Fatalf("cannot load preload metrics: %s", err)
 	}
-
-	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
 
 	st := storage.NewStorage()
 
+	var privateKey *rsa.PrivateKey
+	if cfg.CryptoKey != "" {
+		privateKey, err = rsa_crypto.LoadPrivateKey(cfg.CryptoKey)
+		if err != nil {
+			log.Fatalf("cannot load private key: %s", err)
+		}
+	}
+
 	rout := chi.NewRouter()
+
+	rout.Use(rsa_crypto.CryptoMiddleware(privateKey))
 
 	rout.Mount("/debug", http.DefaultServeMux)
 
@@ -90,6 +100,8 @@ func main() {
 
 	rout.Post("/value/", handlers.GetMetricHandler(st))
 	rout.Get("/value/{metric_type}/{metric_name}", handlers.GetMetricPlainHandler(st))
+
+	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
 
 	if err = http.ListenAndServe(cfg.Addr, compress.GzipMiddleware(rout)); err != nil {
 		logger.Fatalf("cannot start server: %s", err)
