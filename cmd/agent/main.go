@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
-	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography/rsa_crypto"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography/rsacrypto"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/logger"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/monitors"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/sender"
@@ -39,7 +39,7 @@ func main() {
 	var publicKey *rsa.PublicKey
 
 	if cfg.CryptoKey != "" {
-		publicKey, err = rsa_crypto.LoadPublicKey(cfg.CryptoKey)
+		publicKey, err = rsacrypto.LoadPublicKey(cfg.CryptoKey)
 		if err != nil {
 			log.Fatalf("cannot load public key: %s", err)
 		}

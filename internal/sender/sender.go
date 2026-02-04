@@ -10,7 +10,7 @@ import (
 
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography"
-	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography/rsa_crypto"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography/rsacrypto"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/models"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/pool"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
@@ -97,7 +97,7 @@ func (v *values) Process(counters []storage.Counter, gauges []storage.Gauge) err
 	encrypted := false
 
 	if v.publicKey != nil {
-		dataToSend, err = rsa_crypto.Encrypt(v.publicKey, compressedData)
+		dataToSend, err = rsacrypto.Encrypt(v.publicKey, compressedData)
 		if err != nil {
 			return fmt.Errorf("failed encrypt data: %w", err)
 		}

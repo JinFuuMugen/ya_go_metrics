@@ -12,7 +12,7 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/compress"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography"
-	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography/rsa_crypto"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography/rsacrypto"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/database"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/handlers"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/io"
@@ -69,7 +69,7 @@ func main() {
 
 	var privateKey *rsa.PrivateKey
 	if cfg.CryptoKey != "" {
-		privateKey, err = rsa_crypto.LoadPrivateKey(cfg.CryptoKey)
+		privateKey, err = rsacrypto.LoadPrivateKey(cfg.CryptoKey)
 		if err != nil {
 			log.Fatalf("cannot load private key: %s", err)
 		}
@@ -77,7 +77,7 @@ func main() {
 
 	rout := chi.NewRouter()
 
-	rout.Use(rsa_crypto.CryptoMiddleware(privateKey))
+	rout.Use(rsacrypto.CryptoMiddleware(privateKey))
 
 	rout.Mount("/debug", http.DefaultServeMux)
 
