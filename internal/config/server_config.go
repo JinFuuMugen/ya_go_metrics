@@ -34,6 +34,9 @@ type ServerConfig struct {
 
 	// AuditURL defines the HTTP endpoint for sending audit events.
 	AuditURL string `env:"AUDIT_URL"`
+
+	// CryptoKey is the path to private key file
+	CryptoKey string `env:"CRYPTO_KEY"`
 }
 
 // LoadServerConfig loads and initializes the server configuration.
@@ -46,6 +49,7 @@ func LoadServerConfig() (*ServerConfig, error) {
 		Key:             "",
 		AuditFile:       "",
 		AuditURL:        "",
+		CryptoKey:       "",
 	}
 
 	flag.StringVar(&cfg.Addr, "a", cfg.Addr, "server address")
@@ -56,6 +60,7 @@ func LoadServerConfig() (*ServerConfig, error) {
 	flag.StringVar(&cfg.Key, "k", cfg.Key, "SHA256 key")
 	flag.StringVar(&cfg.AuditFile, "audit-file", cfg.AuditFile, "audit file path")
 	flag.StringVar(&cfg.AuditURL, "audit-url", cfg.AuditURL, "audit url")
+	flag.StringVar(&cfg.CryptoKey, "crypto-key", cfg.CryptoKey, "crypto key filepath")
 	flag.Parse()
 
 	if envAddr, ok := os.LookupEnv("ADDRESS"); ok {
@@ -100,6 +105,10 @@ func LoadServerConfig() (*ServerConfig, error) {
 
 	if envAuditURL, ok := os.LookupEnv("AUDIT_URL"); ok {
 		cfg.AuditURL = envAuditURL
+	}
+
+	if envCryptoKey, ok := os.LookupEnv("CRYPTO_KEY"); ok {
+		cfg.CryptoKey = envCryptoKey
 	}
 
 	return cfg, nil

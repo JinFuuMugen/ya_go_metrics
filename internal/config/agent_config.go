@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/caarlos0/env"
@@ -24,6 +25,9 @@ type Config struct {
 
 	// RateLimit defines the maximum number of outgoing requests.
 	RateLimit int `env:"RATE_LIMIT"`
+
+	// CryptoKey is the path to private key file
+	CryptoKey string `env:"CRYPTO_KEY"`
 }
 
 // New creates and initializes a Config instace.
@@ -34,6 +38,7 @@ func New() (*Config, error) {
 	flag.IntVar(&cfg.ReportInterval, `r`, cfg.ReportInterval, `poll interval`)
 	flag.StringVar(&cfg.Key, `k`, cfg.Key, `SHA256 key`)
 	flag.IntVar(&cfg.RateLimit, `l`, cfg.RateLimit, `requests limit`)
+	flag.StringVar(&cfg.CryptoKey, "crypto-key", cfg.CryptoKey, "crypto key filepath")
 	flag.Parse()
 
 	if err := env.Parse(cfg); err != nil {
@@ -54,6 +59,10 @@ func New() (*Config, error) {
 
 	if cfg.RateLimit == 0 {
 		cfg.RateLimit = 1
+	}
+
+	if envCryptoKey, ok := os.LookupEnv("CRYPTO_KEY"); ok {
+		cfg.CryptoKey = envCryptoKey
 	}
 
 	return cfg, nil

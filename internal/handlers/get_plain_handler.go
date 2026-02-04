@@ -44,7 +44,7 @@ func GetMetricPlainHandler(
 
 		default:
 			logger.Errorf("unsupported metric type: %s", metricType)
-			http.Error(w, "unsupported metric type", http.StatusNotImplemented)
+			http.Error(w, "unsupported metric type", http.StatusBadRequest)
 			return
 		}
 	}
