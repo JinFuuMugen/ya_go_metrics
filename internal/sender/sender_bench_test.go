@@ -13,7 +13,7 @@ func BenchmarkSenderProcess(b *testing.B) {
 		Key:  "",
 	}
 
-	s := NewSender(cfg)
+	s := NewSender(cfg, nil)
 
 	st := storage.NewStorage()
 	for i := 0; i < 100; i++ {

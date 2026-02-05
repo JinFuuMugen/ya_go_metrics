@@ -11,6 +11,7 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/compress"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography/rsacrypto"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/database"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/handlers"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/io"
@@ -60,24 +61,33 @@ func main() {
 	}
 
 	if err := io.Run(cfg, db); err != nil {
-		logger.Fatalf("cannot load preload metrics: %s", err)
+		log.Fatalf("cannot load preload metrics: %s", err)
 	}
-
-	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
 
 	st := storage.NewStorage()
 
 	rout := chi.NewRouter()
 
+	if cfg.CryptoKey != "" {
+		privateKey, err := rsacrypto.LoadPrivateKey(cfg.CryptoKey)
+		if err != nil {
+			log.Fatalf("cannot load private key: %s", err)
+		}
+
+		rout.Use(rsacrypto.CryptoMiddleware(privateKey))
+	}
+
+	rout.Use(compress.GzipMiddleware)
+
 	rout.Mount("/debug", http.DefaultServeMux)
 
-	rout.Get("/", handlers.MainHandler)
+	rout.Get("/", handlers.MainHandler(st))
 
 	rout.Get("/ping", handlers.PingDBHandler(db))
 
 	rout.Route("/updates", func(r chi.Router) {
-		r.Use(io.GetDumperMiddleware(cfg, db))
 		r.Use(cryptography.ValidateHashMiddleware(cfg))
+		r.Use(io.GetDumperMiddleware(cfg, db))
 		r.Post("/", handlers.UpdateBatchMetricsHandler(st, publisher))
 	})
 
@@ -91,7 +101,9 @@ func main() {
 	rout.Post("/value/", handlers.GetMetricHandler(st))
 	rout.Get("/value/{metric_type}/{metric_name}", handlers.GetMetricPlainHandler(st))
 
-	if err = http.ListenAndServe(cfg.Addr, compress.GzipMiddleware(rout)); err != nil {
+	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
+
+	if err = http.ListenAndServe(cfg.Addr, rout); err != nil {
 		logger.Fatalf("cannot start server: %s", err)
 	}
 }
