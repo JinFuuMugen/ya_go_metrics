@@ -77,8 +77,6 @@ func main() {
 
 	rout := chi.NewRouter()
 
-	rout.Use(rsacrypto.CryptoMiddleware(privateKey))
-
 	rout.Mount("/debug", http.DefaultServeMux)
 
 	rout.Get("/", handlers.MainHandler)
@@ -87,12 +85,14 @@ func main() {
 
 	rout.Route("/updates", func(r chi.Router) {
 		r.Use(io.GetDumperMiddleware(cfg, db))
+		r.Use(rsacrypto.CryptoMiddleware(privateKey))
 		r.Use(cryptography.ValidateHashMiddleware(cfg))
 		r.Post("/", handlers.UpdateBatchMetricsHandler(st, publisher))
 	})
 
 	rout.Route("/update", func(r chi.Router) {
 		r.Use(io.GetDumperMiddleware(cfg, db))
+		r.Use(rsacrypto.CryptoMiddleware(privateKey))
 		r.Use(cryptography.ValidateHashMiddleware(cfg))
 		r.Post("/", handlers.UpdateMetricsHandler(st, publisher))
 		r.Post("/{metric_type}/{metric_name}/{metric_value}", handlers.UpdateMetricsPlainHandler(st, publisher))
