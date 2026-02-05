@@ -35,7 +35,7 @@ type values struct {
 }
 
 // NewSender creates a new Sender instance using the provided configuration.
-func NewSender(cfg config.Config, publicKey *rsa.PublicKey) *values {
+func NewSender(cfg config.AgentConfig, publicKey *rsa.PublicKey) *values {
 	return &values{cfg.Addr, resty.New(), cfg.Key, publicKey}
 }
 

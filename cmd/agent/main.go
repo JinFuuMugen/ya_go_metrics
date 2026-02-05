@@ -19,7 +19,7 @@ var buildDate = "N/A"
 var buildCommit = "N/A"
 
 func main() {
-	cfg, err := config.New()
+	cfg, err := config.LoadAgentConfig()
 	if err != nil {
 		log.Fatalf("cannot create config: %s", err)
 	}

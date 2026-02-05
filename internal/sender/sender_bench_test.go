@@ -8,7 +8,7 @@ import (
 )
 
 func BenchmarkSenderProcess(b *testing.B) {
-	cfg := config.Config{
+	cfg := config.AgentConfig{
 		Addr: "localhost:8080",
 		Key:  "",
 	}
