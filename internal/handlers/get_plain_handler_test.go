@@ -21,33 +21,33 @@ func TestGetMetricPlainHandle(t *testing.T) {
 	}{
 		{
 			name:        "positive gauge get",
-			wantedCode:  200,
+			wantedCode:  http.StatusOK,
 			method:      http.MethodGet,
 			url:         "/value/gauge/someG",
 			wantedValue: "123.123",
 		},
 		{
 			name:        "positive counter get",
-			wantedCode:  200,
+			wantedCode:  http.StatusOK,
 			method:      http.MethodGet,
 			url:         "/value/counter/someC",
 			wantedValue: "123",
 		},
 		{
 			name:       "wrong method",
-			wantedCode: 405,
+			wantedCode: http.StatusMethodNotAllowed,
 			method:     http.MethodPost,
 			url:        "/value/counter/someValue",
 		},
 		{
 			name:       "wrong url",
-			wantedCode: 404,
+			wantedCode: http.StatusNotFound,
 			method:     http.MethodGet,
 			url:        "/updat/gauge/some",
 		},
 		{
 			name:       "wrong metric",
-			wantedCode: 501,
+			wantedCode: http.StatusBadRequest,
 			method:     http.MethodGet,
 			url:        "/value/metr/someValue",
 		},
