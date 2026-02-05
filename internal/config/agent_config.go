@@ -33,7 +33,7 @@ type AgentConfig struct {
 	ConfigPath string `env:"CONFIG" json:"-"`
 }
 
-// New creates and initializes a AgentConfig instace.
+// LoadAgentConfig creates and initializes a AgentConfig instace.
 func LoadAgentConfig() (*AgentConfig, error) {
 	cfg := &AgentConfig{}
 
