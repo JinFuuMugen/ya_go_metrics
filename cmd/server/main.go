@@ -6,6 +6,9 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/JinFuuMugen/ya_go_metrics/internal/audit"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/compress"
@@ -103,7 +106,39 @@ func main() {
 
 	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
 
-	if err = http.ListenAndServe(cfg.Addr, rout); err != nil {
-		logger.Fatalf("cannot start server: %s", err)
+	ctx, stop := signal.NotifyContext(context.Background(),
+		syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT,
+	)
+	defer stop()
+
+	srv := &http.Server{
+		Addr:    cfg.Addr,
+		Handler: rout,
+	}
+
+	errCh := make(chan error, 1)
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			errCh <- err
+		}
+		close(errCh)
+	}()
+
+	select {
+	case <-ctx.Done():
+		logger.Infof("shutdown signal received")
+	case err := <-errCh:
+		if err != nil {
+			logger.Fatalf("cannot start server: %s", err)
+		}
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		logger.Errorf("http server shutdown error: %s", err)
+	} else {
+		logger.Infof("http server stopped")
 	}
 }
