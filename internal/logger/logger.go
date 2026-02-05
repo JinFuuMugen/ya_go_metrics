@@ -32,6 +32,10 @@ func Errorf(template string, args ...any) {
 	log.Errorf(template, args...)
 }
 
+func Infof(template string, args ...any) {
+	log.Infof(template, args...)
+}
+
 func HandlerLogger(h http.HandlerFunc) http.HandlerFunc {
 	logFn := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()

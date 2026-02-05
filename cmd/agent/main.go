@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"crypto/rsa"
 	"fmt"
 	"log"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
@@ -31,13 +35,19 @@ func main() {
 
 	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
 
+	ctx, stop := signal.NotifyContext(context.Background(),
+		syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT,
+	)
+	defer stop()
+
 	pollTicker := cfg.PollTicker()
 	reportTicker := cfg.ReportTicker()
+	defer pollTicker.Stop()
+	defer reportTicker.Stop()
 
 	str := storage.NewStorage()
 
 	var publicKey *rsa.PublicKey
-
 	if cfg.CryptoKey != "" {
 		publicKey, err = rsacrypto.LoadPublicKey(cfg.CryptoKey)
 		if err != nil {
@@ -53,36 +63,91 @@ func main() {
 	rateLimit := cfg.RateLimit
 	semaphore := make(chan struct{}, rateLimit)
 
-	rateLimitTicker := time.NewTicker(time.Second / time.Duration(rateLimit))
-	defer rateLimitTicker.Stop()
+	rateTicker := time.NewTicker(time.Second / time.Duration(rateLimit))
+	defer rateTicker.Stop()
+
+	var wg sync.WaitGroup
+	var shuttingDown bool
+
+	waitRateToken := func() bool {
+		select {
+		case <-rateTicker.C:
+			return true
+		case <-ctx.Done():
+			return false
+		}
+	}
+
+	finalFlush := func() {
+		if err := m.Dump(); err != nil {
+			logger.Warnf("final dump runtime metrics error: %s", err)
+		}
+		if err := g.Dump(); err != nil {
+			logger.Warnf("final dump gopsutil metrics error: %s", err)
+		}
+	}
 
 	for {
 		select {
+		case <-ctx.Done():
+			if shuttingDown {
+				return
+			}
+			shuttingDown = true
+
+			logger.Infof("shutdown signal received, stopping agent...")
+
+			pollTicker.Stop()
+			reportTicker.Stop()
+
+			wg.Wait()
+
+			finalFlush()
+
+			logger.Infof("agent stopped gracefully")
+			return
+
 		case <-pollTicker.C:
+			if shuttingDown {
+				continue
+			}
+			if !waitRateToken() {
+				continue
+			}
+
 			m.CollectRuntimeMetrics()
 			if err := g.CollectGopsutil(); err != nil {
 				logger.Fatalf("error collecting gopsutil metrics: %s", err)
 			}
 
 		case <-reportTicker.C:
+			if shuttingDown {
+				continue
+			}
+			if !waitRateToken() {
+				continue
+			}
+
 			select {
 			case semaphore <- struct{}{}:
+				wg.Add(1)
 				go func() {
-					err := m.Dump()
-					if err != nil {
-						logger.Warnf("error dumping metrics: %s", err)
+					defer wg.Done()
+					defer func() {
+						<-semaphore
+					}()
+
+					if err := m.Dump(); err != nil {
+						logger.Warnf("error dumping runtime metrics: %s", err)
 					}
-					err = g.Dump()
-					if err != nil {
-						logger.Warnf("error dumping metrics: %s", err)
+
+					if err := g.Dump(); err != nil {
+						logger.Warnf("error dumping gopsutil metrics: %s", err)
 					}
-					<-semaphore
 				}()
 			default:
 				logger.Warnf("maximum concurrent Dump executions reached, skipping current dump")
 			}
 		}
-
-		<-rateLimitTicker.C
 	}
 }
