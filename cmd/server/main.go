@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/rsa"
 	"fmt"
 	"log"
 	"net/http"
@@ -67,32 +66,33 @@ func main() {
 
 	st := storage.NewStorage()
 
-	var privateKey *rsa.PrivateKey
+	rout := chi.NewRouter()
+
 	if cfg.CryptoKey != "" {
-		privateKey, err = rsacrypto.LoadPrivateKey(cfg.CryptoKey)
+		privateKey, err := rsacrypto.LoadPrivateKey(cfg.CryptoKey)
 		if err != nil {
 			log.Fatalf("cannot load private key: %s", err)
 		}
+
+		rout.Use(rsacrypto.CryptoMiddleware(privateKey))
 	}
 
-	rout := chi.NewRouter()
+	rout.Use(compress.GzipMiddleware)
 
 	rout.Mount("/debug", http.DefaultServeMux)
 
-	rout.Get("/", handlers.MainHandler)
+	rout.Get("/", handlers.MainHandler(st))
 
 	rout.Get("/ping", handlers.PingDBHandler(db))
 
 	rout.Route("/updates", func(r chi.Router) {
-		r.Use(io.GetDumperMiddleware(cfg, db))
-		r.Use(rsacrypto.CryptoMiddleware(privateKey))
 		r.Use(cryptography.ValidateHashMiddleware(cfg))
+		r.Use(io.GetDumperMiddleware(cfg, db))
 		r.Post("/", handlers.UpdateBatchMetricsHandler(st, publisher))
 	})
 
 	rout.Route("/update", func(r chi.Router) {
 		r.Use(io.GetDumperMiddleware(cfg, db))
-		r.Use(rsacrypto.CryptoMiddleware(privateKey))
 		r.Use(cryptography.ValidateHashMiddleware(cfg))
 		r.Post("/", handlers.UpdateMetricsHandler(st, publisher))
 		r.Post("/{metric_type}/{metric_name}/{metric_value}", handlers.UpdateMetricsPlainHandler(st, publisher))
@@ -103,7 +103,7 @@ func main() {
 
 	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
 
-	if err = http.ListenAndServe(cfg.Addr, compress.GzipMiddleware(rout)); err != nil {
+	if err = http.ListenAndServe(cfg.Addr, rout); err != nil {
 		logger.Fatalf("cannot start server: %s", err)
 	}
 }
