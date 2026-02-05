@@ -92,6 +92,13 @@ func applyServerJSON(cfg *ServerConfig, path string) error {
 		}
 	}
 
+	if v, ok := raw["trusted_subnet"]; ok {
+		var s string
+		if err := json.Unmarshal(v, &s); err == nil && s != "" {
+			cfg.TrustedSubnet = s
+		}
+	}
+
 	return nil
 }
 

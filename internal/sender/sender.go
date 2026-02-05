@@ -12,6 +12,7 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography/rsacrypto"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/models"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/network"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/pool"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 	"github.com/go-resty/resty/v2"
@@ -118,6 +119,13 @@ func (v *values) Process(counters []storage.Counter, gauges []storage.Gauge) err
 		hash := cryptography.GetHMACSHA256(jsonData, v.key)
 		req.SetHeader("HashSHA256", hex.EncodeToString(hash))
 	}
+
+	ip, err := network.OutboundIPTo(v.addr)
+	if err != nil {
+		return fmt.Errorf("cannot determine outbound ip: %w", err)
+	}
+
+	req.SetHeader("X-Real-IP", ip.String())
 
 	_, err = req.Post(url)
 	if err != nil {

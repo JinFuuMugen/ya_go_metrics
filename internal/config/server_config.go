@@ -40,6 +40,9 @@ type ServerConfig struct {
 
 	// ConfigPath is the path to json config file
 	ConfigPath string `env:"CONFIG" json:"-"`
+
+	// TrustedSubnet is the string representation of allowed subnet
+	TrustedSubnet string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
 }
 
 // LoadServerConfig loads and initializes the server configuration.
@@ -54,6 +57,7 @@ func LoadServerConfig() (*ServerConfig, error) {
 		AuditURL:        "",
 		CryptoKey:       "",
 		ConfigPath:      "",
+		TrustedSubnet:   "",
 	}
 
 	cfg.ConfigPath = os.Getenv("CONFIG")
@@ -76,6 +80,7 @@ func LoadServerConfig() (*ServerConfig, error) {
 	flag.StringVar(&cfg.AuditFile, "audit-file", cfg.AuditFile, "audit file path")
 	flag.StringVar(&cfg.AuditURL, "audit-url", cfg.AuditURL, "audit url")
 	flag.StringVar(&cfg.CryptoKey, "crypto-key", cfg.CryptoKey, "crypto key filepath")
+	flag.StringVar(&cfg.TrustedSubnet, "t", cfg.TrustedSubnet, "allowed subnet for metrics update")
 
 	flag.Parse()
 
@@ -125,6 +130,10 @@ func LoadServerConfig() (*ServerConfig, error) {
 
 	if envCryptoKey, ok := os.LookupEnv("CRYPTO_KEY"); ok {
 		cfg.CryptoKey = envCryptoKey
+	}
+
+	if envTrustedSubnet, ok := os.LookupEnv("TRUSTED_SUBNET"); ok {
+		cfg.TrustedSubnet = envTrustedSubnet
 	}
 
 	return cfg, nil

@@ -19,6 +19,7 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/handlers"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/io"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/logger"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/network"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 	"github.com/go-chi/chi/v5"
 )
@@ -89,12 +90,14 @@ func main() {
 	rout.Get("/ping", handlers.PingDBHandler(db))
 
 	rout.Route("/updates", func(r chi.Router) {
+		r.Use(network.CheckValidSubnetMiddleware(cfg.TrustedSubnet))
 		r.Use(cryptography.ValidateHashMiddleware(cfg))
 		r.Use(io.GetDumperMiddleware(cfg, db))
 		r.Post("/", handlers.UpdateBatchMetricsHandler(st, publisher))
 	})
 
 	rout.Route("/update", func(r chi.Router) {
+		r.Use(network.CheckValidSubnetMiddleware(cfg.TrustedSubnet))
 		r.Use(io.GetDumperMiddleware(cfg, db))
 		r.Use(cryptography.ValidateHashMiddleware(cfg))
 		r.Post("/", handlers.UpdateMetricsHandler(st, publisher))
