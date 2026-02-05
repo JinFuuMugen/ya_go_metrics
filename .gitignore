@@ -25,3 +25,8 @@ vendor/
 .vscode
 metricstest_v2
 tmp/*.log
+
+
+# Keyes
+*.pem
+*.json

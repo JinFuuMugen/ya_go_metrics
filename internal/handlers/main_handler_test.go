@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/JinFuuMugen/ya_go_metrics/internal/logger"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 )
@@ -31,10 +32,13 @@ func TestMainHandle(t *testing.T) {
 		},
 	}
 	logger.Init()
+
+	st := storage.NewStorage()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := chi.NewRouter()
-			r.Get("/", MainHandler)
+			r.Get("/", MainHandler(st))
 			req, err := http.NewRequest(tt.method, tt.url, nil)
 			if err != nil {
 				t.Fatal(err)
