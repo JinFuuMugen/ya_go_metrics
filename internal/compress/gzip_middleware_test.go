@@ -3,6 +3,7 @@ package compress
 import (
 	"bytes"
 	"compress/gzip"
+	"html/template"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -104,7 +105,12 @@ func TestGzipMiddleware(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rout := chi.NewRouter()
 
-			rout.Get(`/`, handlers.MainHandler(st))
+			tmpl, err := template.ParseFiles("internal/static/index.html")
+			if err != nil {
+				t.Errorf("cannot parse template: %s", err)
+			}
+
+			rout.Get(`/`, handlers.MainHandler(st, tmpl))
 			rout.Post(`/update/`, handlers.UpdateMetricsHandler(st, nil))
 			rout.Post(`/value/`, handlers.GetMetricHandler(st))
 			rout.Post(`/update/{metric_type}/{metric_name}/{metric_value}`, handlers.UpdateMetricsPlainHandler(st, nil))

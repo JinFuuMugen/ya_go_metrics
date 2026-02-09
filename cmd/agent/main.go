@@ -7,6 +7,7 @@ import (
 	"log"
 	"os/signal"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -67,7 +68,7 @@ func main() {
 	defer rateTicker.Stop()
 
 	var wg sync.WaitGroup
-	var shuttingDown bool
+	var shuttingDown atomic.Bool
 
 	waitRateToken := func() bool {
 		select {
@@ -90,10 +91,10 @@ func main() {
 	for {
 		select {
 		case <-ctx.Done():
-			if shuttingDown {
+			if shuttingDown.Load() {
 				return
 			}
-			shuttingDown = true
+			shuttingDown.Store(true)
 
 			logger.Infof("shutdown signal received, stopping agent...")
 
@@ -108,7 +109,7 @@ func main() {
 			return
 
 		case <-pollTicker.C:
-			if shuttingDown {
+			if shuttingDown.Load() {
 				continue
 			}
 			if !waitRateToken() {
@@ -121,7 +122,7 @@ func main() {
 			}
 
 		case <-reportTicker.C:
-			if shuttingDown {
+			if shuttingDown.Load() {
 				continue
 			}
 			if !waitRateToken() {

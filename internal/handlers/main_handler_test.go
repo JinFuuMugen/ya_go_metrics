@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -33,12 +34,18 @@ func TestMainHandle(t *testing.T) {
 	}
 	logger.Init()
 
+	tmpl, err := template.ParseFiles("internal/static/index.html")
+	if err != nil {
+		logger.Errorf("cannot parse template: %s", err)
+		return
+	}
+
 	st := storage.NewStorage()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := chi.NewRouter()
-			r.Get("/", MainHandler(st))
+			r.Get("/", MainHandler(st, tmpl))
 			req, err := http.NewRequest(tt.method, tt.url, nil)
 			if err != nil {
 				t.Fatal(err)

@@ -12,18 +12,16 @@ import (
 // MainHandler handles requests for rendering the main HTML page with all current metric values.
 func MainHandler(
 	st storage.Storage,
+	tmpl *template.Template,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
 
-		tmpl, err := template.ParseFiles("internal/static/index.html")
-		if err != nil {
-			logger.Errorf("cannot parse template: %s", err)
-			http.Error(w, fmt.Sprintf("cannot parse template: %s", err), http.StatusInternalServerError)
-			return
+		if tmpl == nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		err = tmpl.Execute(w, struct {
+		err := tmpl.Execute(w, struct {
 			Gauges   []storage.Gauge
 			Counters []storage.Counter
 		}{st.GetGauges(), st.GetCounters()})

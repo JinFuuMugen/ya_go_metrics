@@ -34,7 +34,7 @@ func LoadPublicKey(path string) (*rsa.PublicKey, error) {
 	return pub, nil
 }
 
-// LoadPrivteKey loads privatekey from path
+// LoadPrivateKey loads privatekey from path
 func LoadPrivateKey(path string) (*rsa.PrivateKey, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {

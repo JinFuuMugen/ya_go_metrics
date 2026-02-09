@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -80,11 +81,17 @@ func main() {
 		rout.Use(rsacrypto.CryptoMiddleware(privateKey))
 	}
 
+	tmpl, err := template.ParseFiles("internal/static/index.html")
+	if err != nil {
+		logger.Errorf("cannot parse template: %s", err)
+		return
+	}
+
 	rout.Use(compress.GzipMiddleware)
 
 	rout.Mount("/debug", http.DefaultServeMux)
 
-	rout.Get("/", handlers.MainHandler(st))
+	rout.Get("/", handlers.MainHandler(st, tmpl))
 
 	rout.Get("/ping", handlers.PingDBHandler(db))
 
