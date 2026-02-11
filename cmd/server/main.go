@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os/signal"
@@ -16,12 +17,15 @@ import (
 	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography/rsacrypto"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/database"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/grpcmetrics"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/handlers"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/io"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/logger"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/network"
+	pb "github.com/JinFuuMugen/ya_go_metrics/internal/proto"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/storage"
 	"github.com/go-chi/chi/v5"
+	"google.golang.org/grpc"
 )
 
 var buildVersion = "N/A"
@@ -114,6 +118,26 @@ func main() {
 	)
 	defer stop()
 
+	grpcLis, err := net.Listen("tcp", cfg.GRPCAddr)
+	if err != nil {
+		log.Fatalf("cannot listen gRPC addr %s: %v", cfg.GRPCAddr, err)
+	}
+
+	grpcSrv := grpc.NewServer(
+		grpc.UnaryInterceptor(network.SubnetUnaryInterceptor(cfg.TrustedSubnet)),
+	)
+
+	pb.RegisterMetricsServer(grpcSrv, grpcmetrics.New(st, publisher))
+
+	grpcErrCh := make(chan error, 1)
+	go func() {
+		logger.Infof("gRPC server listening on %s", cfg.GRPCAddr)
+		if err := grpcSrv.Serve(grpcLis); err != nil {
+			grpcErrCh <- err
+		}
+		close(grpcErrCh)
+	}()
+
 	srv := &http.Server{
 		Addr:    cfg.Addr,
 		Handler: rout,
@@ -134,10 +158,17 @@ func main() {
 		if err != nil {
 			logger.Fatalf("cannot start server: %s", err)
 		}
+	case err := <-grpcErrCh:
+		if err != nil {
+			logger.Fatalf("cannot start grpc server: %s", err)
+		}
 	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
+
+	grpcSrv.GracefulStop()
+	_ = grpcLis.Close()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Errorf("http server shutdown error: %s", err)

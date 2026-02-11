@@ -43,6 +43,9 @@ type ServerConfig struct {
 
 	// TrustedSubnet is the string representation of allowed subnet
 	TrustedSubnet string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
+
+	// GRPCAddr is gRPC server listen address
+	GRPCAddr string `env:"GRPC_ADDRESS" json:"-"`
 }
 
 // LoadServerConfig loads and initializes the server configuration.
@@ -58,6 +61,7 @@ func LoadServerConfig() (*ServerConfig, error) {
 		CryptoKey:       "",
 		ConfigPath:      "",
 		TrustedSubnet:   "",
+		GRPCAddr:        "localhost:3200",
 	}
 
 	cfg.ConfigPath = os.Getenv("CONFIG")
@@ -81,6 +85,7 @@ func LoadServerConfig() (*ServerConfig, error) {
 	flag.StringVar(&cfg.AuditURL, "audit-url", cfg.AuditURL, "audit url")
 	flag.StringVar(&cfg.CryptoKey, "crypto-key", cfg.CryptoKey, "crypto key filepath")
 	flag.StringVar(&cfg.TrustedSubnet, "t", cfg.TrustedSubnet, "allowed subnet for metrics update")
+	flag.StringVar(&cfg.GRPCAddr, "g", cfg.GRPCAddr, "gRPC listen address")
 
 	flag.Parse()
 
@@ -134,6 +139,10 @@ func LoadServerConfig() (*ServerConfig, error) {
 
 	if envTrustedSubnet, ok := os.LookupEnv("TRUSTED_SUBNET"); ok {
 		cfg.TrustedSubnet = envTrustedSubnet
+	}
+
+	if envGRPCAddr, ok := os.LookupEnv("GRPC_ADDRESS"); ok {
+		cfg.GRPCAddr = envGRPCAddr
 	}
 
 	return cfg, nil
