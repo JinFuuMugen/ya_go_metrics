@@ -2,6 +2,9 @@ package models
 
 import "errors"
 
+var errNoDelta error = errors.New("no delta")
+var errNoValue error = errors.New("no value")
+
 // Metrics represents a metric entity.
 //
 //generate:reset
@@ -34,7 +37,7 @@ func (m *Metrics) SetValue(value float64) {
 // An error is returned if the metric does not contain a value.
 func (m *Metrics) GetValue() (float64, error) {
 	if m.Value == nil {
-		return 0, errors.New("no value")
+		return 0, errNoValue
 	}
 	return *m.Value, nil
 }
@@ -43,7 +46,7 @@ func (m *Metrics) GetValue() (float64, error) {
 // An error is returned if the metric does not contain a delta.
 func (m *Metrics) GetDelta() (int64, error) {
 	if m.Delta == nil {
-		return 0, errors.New("no delta")
+		return 0, errNoDelta
 	}
 	return *m.Delta, nil
 }

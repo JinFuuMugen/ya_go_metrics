@@ -3,14 +3,19 @@ package main
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/JinFuuMugen/ya_go_metrics/internal/audit"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/compress"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/config"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography"
+	"github.com/JinFuuMugen/ya_go_metrics/internal/cryptography/rsacrypto"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/database"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/handlers"
 	"github.com/JinFuuMugen/ya_go_metrics/internal/io"
@@ -60,24 +65,39 @@ func main() {
 	}
 
 	if err := io.Run(cfg, db); err != nil {
-		logger.Fatalf("cannot load preload metrics: %s", err)
+		log.Fatalf("cannot load preload metrics: %s", err)
 	}
-
-	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
 
 	st := storage.NewStorage()
 
 	rout := chi.NewRouter()
 
+	if cfg.CryptoKey != "" {
+		privateKey, err := rsacrypto.LoadPrivateKey(cfg.CryptoKey)
+		if err != nil {
+			log.Fatalf("cannot load private key: %s", err)
+		}
+
+		rout.Use(rsacrypto.CryptoMiddleware(privateKey))
+	}
+
+	tmpl, err := template.ParseFiles("internal/static/index.html")
+	if err != nil {
+		logger.Errorf("cannot parse template: %s", err)
+		return
+	}
+
+	rout.Use(compress.GzipMiddleware)
+
 	rout.Mount("/debug", http.DefaultServeMux)
 
-	rout.Get("/", handlers.MainHandler)
+	rout.Get("/", handlers.MainHandler(st, tmpl))
 
 	rout.Get("/ping", handlers.PingDBHandler(db))
 
 	rout.Route("/updates", func(r chi.Router) {
-		r.Use(io.GetDumperMiddleware(cfg, db))
 		r.Use(cryptography.ValidateHashMiddleware(cfg))
+		r.Use(io.GetDumperMiddleware(cfg, db))
 		r.Post("/", handlers.UpdateBatchMetricsHandler(st, publisher))
 	})
 
@@ -91,7 +111,41 @@ func main() {
 	rout.Post("/value/", handlers.GetMetricHandler(st))
 	rout.Get("/value/{metric_type}/{metric_name}", handlers.GetMetricPlainHandler(st))
 
-	if err = http.ListenAndServe(cfg.Addr, compress.GzipMiddleware(rout)); err != nil {
-		logger.Fatalf("cannot start server: %s", err)
+	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
+
+	ctx, stop := signal.NotifyContext(context.Background(),
+		syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT,
+	)
+	defer stop()
+
+	srv := &http.Server{
+		Addr:    cfg.Addr,
+		Handler: rout,
+	}
+
+	errCh := make(chan error, 1)
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			errCh <- err
+		}
+		close(errCh)
+	}()
+
+	select {
+	case <-ctx.Done():
+		logger.Infof("shutdown signal received")
+	case err := <-errCh:
+		if err != nil {
+			logger.Fatalf("cannot start server: %s", err)
+		}
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		logger.Errorf("http server shutdown error: %s", err)
+	} else {
+		logger.Infof("http server stopped")
 	}
 }

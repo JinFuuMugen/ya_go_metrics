@@ -8,12 +8,12 @@ import (
 )
 
 func BenchmarkSenderProcess(b *testing.B) {
-	cfg := config.Config{
+	cfg := config.AgentConfig{
 		Addr: "localhost:8080",
 		Key:  "",
 	}
 
-	s := NewSender(cfg)
+	s := NewSender(cfg, nil)
 
 	st := storage.NewStorage()
 	for i := 0; i < 100; i++ {
