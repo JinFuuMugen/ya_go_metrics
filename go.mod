@@ -2,8 +2,6 @@ module github.com/JinFuuMugen/ya_go_metrics
 
 go 1.25.0
 
-toolchain go1.24.10
-
 require (
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/go-chi/chi/v5 v5.2.3
