@@ -56,7 +56,18 @@ func main() {
 		}
 	}
 
-	snd := sender.NewSender(*cfg, publicKey)
+	var snd sender.Sender
+
+	if cfg.GRPCAddr != "" {
+		gs, err := sender.NewGRPCSender(*cfg)
+		if err != nil {
+			log.Fatalf("cannot init grpc sender: %s", err)
+		}
+		defer gs.Close()
+		snd = gs
+	} else {
+		snd = sender.NewSender(*cfg, publicKey)
+	}
 
 	m := monitors.NewRuntimeMonitor(str, snd)
 	g := monitors.NewGopsutilMonitor(str, snd)

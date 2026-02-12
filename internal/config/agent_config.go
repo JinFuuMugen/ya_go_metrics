@@ -31,6 +31,9 @@ type AgentConfig struct {
 
 	// ConfigPath is the path to json config file
 	ConfigPath string `env:"CONFIG" json:"-"`
+
+	// GRPCAddr is gRPC server address
+	GRPCAddr string `env:"GRPC_ADDRESS" json:"address_grpc"`
 }
 
 // LoadAgentConfig creates and initializes a AgentConfig instace.
@@ -54,6 +57,7 @@ func LoadAgentConfig() (*AgentConfig, error) {
 	flag.StringVar(&cfg.Key, `k`, cfg.Key, `SHA256 key`)
 	flag.IntVar(&cfg.RateLimit, `l`, cfg.RateLimit, `requests limit`)
 	flag.StringVar(&cfg.CryptoKey, "crypto-key", cfg.CryptoKey, "crypto key filepath")
+	flag.StringVar(&cfg.GRPCAddr, "g", cfg.GRPCAddr, "gRPC server address")
 	flag.Parse()
 
 	if err := env.Parse(cfg); err != nil {
@@ -78,6 +82,10 @@ func LoadAgentConfig() (*AgentConfig, error) {
 
 	if envCryptoKey, ok := os.LookupEnv("CRYPTO_KEY"); ok {
 		cfg.CryptoKey = envCryptoKey
+	}
+
+	if cfg.GRPCAddr == "" {
+		cfg.GRPCAddr = "localhost:3200"
 	}
 
 	return cfg, nil
