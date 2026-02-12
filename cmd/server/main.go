@@ -170,7 +170,7 @@ func main() {
 	defer cancel()
 
 	grpcSrv.GracefulStop()
-	_ = grpcLis.Close()
+	grpcLis.Close()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Errorf("http server shutdown error: %s", err)
