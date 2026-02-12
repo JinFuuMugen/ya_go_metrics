@@ -13,7 +13,7 @@ func CheckValidSubnetMiddleware(subnet string) func(http.Handler) http.Handler {
 	if subnet != "" {
 		_, parsed, err := net.ParseCIDR(subnet)
 		if err != nil {
-			logger.Fatalf("invalid trusted subnet CIDR %q: %v", subnet, err)
+			return nil
 		}
 		ipnet = parsed
 	}

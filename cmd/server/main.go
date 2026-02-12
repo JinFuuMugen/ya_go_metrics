@@ -139,8 +139,10 @@ func main() {
 	}()
 
 	srv := &http.Server{
-		Addr:    cfg.Addr,
-		Handler: rout,
+		Addr:         cfg.Addr,
+		Handler:      rout,
+		ReadTimeout:  10,
+		WriteTimeout: 10,
 	}
 
 	errCh := make(chan error, 1)
